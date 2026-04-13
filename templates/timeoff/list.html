@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% block title %}Time Off{% endblock %}
+{% block page_title %}Time Off{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Time Off</div>
+    <div class="page-subtitle">Leave requests & approvals</div>
+  </div>
+  <a href="{% url 'timeoff_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New Request</a>
+</div>
+
+<!-- Summary Cards -->
+<!-- <div class="grid-4" style="margin-bottom:24px;">
+  {% for lt in leave_types %}
+  <div class="stat-card {% cycle 'blue' 'cyan' 'purple' 'green' %} stagger-{{ forloop.counter }}">
+    <div class="stat-icon {% cycle 'blue' 'cyan' 'purple' 'green' %}">
+      <i class="fa-solid fa-umbrella-beach" style="color:var(--accent2)"></i>
+    </div>
+    <div class="stat-value">{{ lt.days_allowed }}</div>
+    <div class="stat-label">{{ lt.name }}</div>
+  </div>
+  {% empty %}
+  <div class="stat-card blue stagger-1">
+    <div class="stat-icon blue"><i class="fa-solid fa-hourglass-half" style="color:var(--accent)"></i></div>
+    <div class="stat-value">{{ requests|length }}</div>
+    <div class="stat-label">Total Requests</div>
+  </div>
+  {% endfor %}
+</div> -->
+
+<!-- Requests Table -->
+<div class="table-wrapper animate-fade-up">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;background:var(--bg3);border-bottom:1px solid var(--border);">
+    <div style="font-weight:600;font-size:14px;"><i class="fa-solid fa-list" style="color:var(--accent2);margin-right:8px;"></i>Leave Requests</div>
+    <div style="display:flex;gap:8px;">
+      <span class="badge badge-warning">Pending: {{ pending_count }}</span>
+    </div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Employee</th>
+        <th>Leave Type</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Days</th>
+        <th>Reason</th>
+        <th>Status</th>
+        <th>Submitted</th>
+        <th>Document</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for req in requests %}
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="emp-avatar" style="background:linear-gradient(135deg,var(--accent3),var(--accent2));">
+              {% if req.employee.personal_photo %}
+                <img src="{{ req.employee.personal_photo.url }}" alt="">
+              {% else %}
+                {{ req.employee.full_name|first|upper }}
+              {% endif %}
+            </div>
+            <div>
+              <div style="font-weight:600;font-size:13px;">{{ req.employee.full_name }}</div>
+              <div style="font-size:11px;color:var(--text3);">{{ req.employee.job_title|default:"—" }}</div>
+            </div>
+          </div>
+        </td>
+        <td>
+          <span class="badge badge-info">{{ req.leave_type.name }}</span>
+        </td>
+        <td style="font-size:13px;">{{ req.date_from|date:"M d, Y" }}</td>
+        <td style="font-size:13px;">{{ req.date_to|date:"M d, Y" }}</td>
+        <td>
+          <span style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--accent2);">{{ req.days_count }}</span>
+        </td>
+        <td style="max-width:180px;color:var(--text3);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ req.reason|default:"—" }}</td>
+        <td>
+          <span class="badge badge-{% if req.approval_state == 'approved' %}success{% elif req.approval_state == 'refused' %}danger{% elif req.approval_state == 'draft' %}gray{% else %}warning{% endif %}">
+            {{ req.get_approval_state_display }}
+          </span>
+        </td>
+        <td style="font-size:12px;color:var(--text3);">{{ req.created_at|date:"M d" }}</td>
+        <td>
+  {% if req.supporting_document %}
+    <a href="{{ req.supporting_document.url }}" target="_blank" 
+      style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--accent2);">
+      {% if req.supporting_document.name|lower|slice:"-3:" == "pdf" %}
+        <i class="fa-solid fa-file-pdf" style="color:#ef4444;"></i> PDF
+      {% else %}
+        <i class="fa-solid fa-file-image" style="color:var(--accent2);"></i> Image
+      {% endif %}
+    </a>
+  {% else %}
+    <span style="color:var(--text3);font-size:12px;">—</span>
+  {% endif %}
+</td>
+        <td>
+          {% if req.user_can_approve %}
+          <form method="post" action="{% url 'timeoff_approve' req.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button class="btn btn-success btn-sm" title="Approve">
+              <i class="fa-solid fa-check"></i>
+            </button>
+          </form>
+          {% endif %}
+
+          {% if req.user_can_refuse %}
+          <form method="post" action="{% url 'timeoff_refuse' req.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button class="btn btn-danger btn-sm" title="Refuse">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </form>
+          {% endif %}
+
+          {% if req.approval_state == 'refused' and req.employee == request.user %}
+          <form method="post" action="{% url 'timeoff_reset' req.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button class="btn btn-secondary btn-sm" title="Reset to Draft">
+              <i class="fa-solid fa-rotate-left"></i>
+            </button>
+          </form>
+          {% endif %}
+
+          {% if not req.user_can_approve and not req.user_can_refuse %}
+            {% if not req.approval_state == 'refused' or not req.employee == request.user %}
+            <span style="color:var(--text3);font-size:12px;">—</span>
+            {% endif %}
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="9" style="text-align:center;padding:50px;color:var(--text3);">
+          <div style="font-size:40px;margin-bottom:12px;">🌴</div>
+          <div>No leave requests found</div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

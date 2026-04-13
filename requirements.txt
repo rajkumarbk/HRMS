@@ -1,0 +1,9 @@
+Django>=4.2,<5.0
+Pillow>=10.0
+djangorestframework>=3.14
+django-cors-headers>=4.0
+# For ZKTeco integration:
+# pyzk>=0.9
+# For background tasks (auto-sync, expiry alerts):
+# celery>=5.3
+# redis>=5.0

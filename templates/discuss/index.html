@@ -1,0 +1,419 @@
+{% extends 'base.html' %}
+{% block title %}Discuss{% endblock %}
+{% block page_title %}Discuss{% endblock %}
+
+{% block content %}
+<style>
+    .chat-layout {
+        display: flex;
+        gap: 20px;
+        height: calc(100vh - 200px);
+        min-height: 500px;
+    }
+    
+    .chat-sidebar {
+        width: 280px;
+        background: var(--card);
+        border-radius: 20px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--border);
+    }
+    
+    .chat-sidebar-header {
+        padding: 16px;
+        border-bottom: 1px solid var(--border);
+        font-weight: 600;
+        font-size: 14px;
+    }
+    
+    .chat-user-list {
+        flex: 1;
+        overflow-y: auto;
+    }
+    
+    .chat-user-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        text-decoration: none;
+        color: var(--text);
+        transition: all 0.2s;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .chat-user-item:hover {
+        background: var(--bg3);
+    }
+    
+    .chat-user-item.active {
+        background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(99,102,241,0.1));
+        border-left: 3px solid var(--accent);
+    }
+    
+    .chat-main {
+        flex: 1;
+        background: var(--card);
+        border-radius: 20px;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--border);
+        overflow: hidden;
+    }
+    
+    .chat-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background: var(--bg2);
+    }
+    
+    .message-wrapper {
+        display: flex;
+        width: 100%;
+    }
+    
+    .message-bubble {
+        max-width: 70%;
+        padding: 10px 14px;
+        margin: 4px 0;
+        position: relative;
+    }
+    
+    .message-bubble.sent {
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: white;
+        border-radius: 12px 12px 4px 12px;
+        margin-left: auto;
+    }
+    
+    .message-bubble.received {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 12px 12px 12px 4px;
+        margin-right: auto;
+    }
+    
+    .message-text {
+        font-size: 14px;
+        word-wrap: break-word;
+    }
+    
+    .message-time {
+        font-size: 10px;
+        margin-top: 4px;
+        opacity: 0.7;
+    }
+    
+    .message-bubble.sent .message-time {
+        text-align: right;
+        color: rgba(255,255,255,0.8);
+    }
+    
+    .message-bubble.received .message-time {
+        color: var(--text3);
+    }
+    
+    .chat-input-area {
+        padding: 16px 20px;
+        border-top: 1px solid var(--border);
+        background: var(--card);
+    }
+    
+    .chat-input-area form {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        width: 100%;
+    }
+    
+    .chat-input-area input {
+        flex: 1;
+        padding: 12px 16px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--bg2);
+        color: var(--text);
+    }
+    
+    .chat-input-area input:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+    
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--success);
+        display: inline-block;
+        margin-right: 6px;
+    }
+</style>
+
+<div class="page-header" style="margin-bottom:16px;">
+  <div>
+    <div class="page-title">Discuss</div>
+    <div class="page-subtitle">Messages & Announcements</div>
+  </div>
+  {% if request.user.is_staff %}
+  <button onclick="toggleAnnounce()" class="btn btn-secondary"><i class="fa-solid fa-bullhorn"></i> New Announcement</button>
+  {% endif %}
+</div>
+
+<!-- Announcement Form (Staff Only) -->
+{% if request.user.is_staff %}
+<div id="announceForm" style="display:none;margin-bottom:20px;">
+  <form method="post" class="card animate-fade-up">
+    {% csrf_token %}
+    <div style="font-size:14px;font-weight:600;color:var(--warning);margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+      <i class="fa-solid fa-bullhorn"></i> Post Announcement
+    </div>
+    <input type="hidden" name="is_announcement" value="1">
+    <div class="form-group">
+      <textarea name="content" rows="3" placeholder="Write your announcement here..."></textarea>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button type="button" onclick="toggleAnnounce()" class="btn btn-secondary">Cancel</button>
+      <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Post</button>
+    </div>
+  </form>
+</div>
+{% endif %}
+
+<!-- Announcements -->
+{% if announcements %}
+<div class="card" style="margin-bottom:20px;">
+  <div style="font-size:14px;font-weight:600;color:var(--warning);margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+    <i class="fa-solid fa-bullhorn"></i> Announcements
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px;">
+    {% for ann in announcements %}
+    <div class="animate-fade-up" style="background:var(--bg3);border:1px solid rgba(245,158,11,0.15);border-left:3px solid var(--warning);border-radius:10px;padding:14px 16px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div class="emp-avatar" style="background:linear-gradient(135deg,var(--warning),#ef4444);width:30px;height:30px;font-size:12px;">
+          {{ ann.sender.full_name|first|upper }}
+        </div>
+        <div>
+          <span style="font-size:13px;font-weight:600;">{{ ann.sender.full_name }}</span>
+          <span style="font-size:11px;color:var(--text3);margin-left:8px;">{{ ann.created_at|date:"M d, Y H:i" }}</span>
+        </div>
+      </div>
+      <div style="font-size:13.5px;color:var(--text);line-height:1.6;">{{ ann.content }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Chat Layout -->
+<div class="chat-layout">
+  <!-- People List -->
+  <div class="chat-sidebar">
+    <div class="chat-sidebar-header">
+      <i class="fa-solid fa-users" style="color:var(--accent2);margin-right:8px;"></i> People
+    </div>
+    <div class="chat-user-list">
+      {% for emp in employees %}
+      <a href="?chat={{ emp.pk }}" class="chat-user-item {% if chat_user and chat_user.pk == emp.pk %}active{% endif %}">
+        <div class="emp-avatar" style="width:34px;height:34px;font-size:12px;flex-shrink:0;">
+          {% if emp.personal_photo %}<img src="{{ emp.personal_photo.url }}" alt="">{% else %}{{ emp.full_name|first|upper }}{% endif %}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ emp.full_name }}</div>
+          <div style="font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ emp.job_title|default:"Employee" }}</div>
+        </div>
+        <span class="status-dot"></span>
+      </a>
+      {% empty %}
+      <div style="text-align:center;padding:30px;color:var(--text3);font-size:13px;">No other employees</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Chat Main -->
+  <div class="chat-main">
+    {% if chat_user %}
+      <div class="chat-header">
+        <div class="emp-avatar" style="width:36px;height:36px;font-size:13px;">
+          {% if chat_user.personal_photo %}<img src="{{ chat_user.personal_photo.url }}" alt="">{% else %}{{ chat_user.full_name|first|upper }}{% endif %}
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:14px;">{{ chat_user.full_name }}</div>
+          <div style="font-size:11px;color:var(--success);"><span class="status-dot"></span>{{ chat_user.job_title|default:"Employee" }}</div>
+        </div>
+      </div>
+
+      <!-- Chat Messages -->
+      <div class="chat-messages" id="chatMessages">
+        {% for msg in chat_messages %}
+        <div class="message-wrapper">
+          <div class="message-bubble {% if msg.sender.id == request.user.id %}sent{% else %}received{% endif %}">
+            <div class="message-text">{{ msg.content }}</div>
+            {% if msg.attachment %}
+            <div style="margin-top:6px;">
+              <a href="{{ msg.attachment.url }}" target="_blank"
+                style="font-size:11px;display:inline-flex;align-items:center;gap:5px;
+                {% if msg.sender.id == request.user.id %}color:rgba(255,255,255,0.9);{% else %}color:var(--accent2);{% endif %}">
+                <i class="fa-solid fa-{% if msg.attachment.name|lower|slice:'-3:' == 'pdf' %}file-pdf{% elif msg.attachment.name|lower|slice:'-3:' in 'jpg,png,peg' %}file-image{% else %}file{% endif %}"></i>
+                {{ msg.attachment.name|slice:"17:" }}
+              </a>
+            </div>
+            {% endif %}
+            <div class="message-time">{{ msg.created_at|date:"H:i" }}</div>
+          </div>
+        </div>
+        {% empty %}
+        <div style="text-align:center;padding:50px;color:var(--text3);">
+          <i class="fa-solid fa-comments" style="font-size:40px;margin-bottom:10px;display:block;"></i>
+          No messages yet. Start a conversation!
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="chat-input-area">
+  <form method="post" id="messageForm" action="?chat={{ chat_user.pk }}" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="hidden" name="receiver_id" value="{{ chat_user.pk }}">
+    <input type="text" name="content" id="msgInput" placeholder="Type a message..." autocomplete="off">
+    
+    <!-- Attach button -->
+    <label for="attachFile" style="cursor:pointer;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text3);flex-shrink:0;" title="Attach file">
+      <i class="fa-solid fa-paperclip"></i>
+    </label>
+    <input type="file" id="attachFile" name="attachment" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+      style="display:none;" onchange="showFileName(this)">
+
+    <button type="submit" class="btn btn-primary" style="flex-shrink:0;padding:10px 16px;">
+      <i class="fa-solid fa-paper-plane"></i>
+    </button>
+  </form>
+  <!-- Show selected filename -->
+  <div id="fileNameDisplay" style="display:none;font-size:11px;color:var(--text3);margin-top:6px;padding-left:4px;">
+    <i class="fa-solid fa-file" style="margin-right:4px;"></i>
+    <span id="fileNameText"></span>
+    <span onclick="clearFile()" style="cursor:pointer;color:var(--danger);margin-left:8px;">✕</span>
+  </div>
+</div>
+
+    {% else %}
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--text3);">
+        <div style="font-size:56px;">💬</div>
+        <div style="font-size:16px;font-weight:600;">Select a person to chat</div>
+        <div style="font-size:13px;">Choose from the list on the left</div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+function toggleAnnounce() {
+  var form = document.getElementById('announceForm');
+  if (form.style.display === 'none') {
+    form.style.display = 'block';
+  } else {
+    form.style.display = 'none';
+  }
+}
+function showFileName(input) {
+  if (input.files && input.files[0]) {
+    document.getElementById('fileNameDisplay').style.display = 'block';
+    document.getElementById('fileNameText').textContent = input.files[0].name;
+  }
+}
+
+function clearFile() {
+  document.getElementById('attachFile').value = '';
+  document.getElementById('fileNameDisplay').style.display = 'none';
+  document.getElementById('fileNameText').textContent = '';
+}
+
+function scrollToBottom() {
+  var chatMessages = document.getElementById('chatMessages');
+  if (chatMessages) {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+}
+
+function sendMessage() {
+  var msgInput = document.getElementById('msgInput');
+  var content = msgInput.value.trim();
+  var fileInput = document.getElementById('attachFile');
+  
+  if (!content && !fileInput.files.length) return false;
+
+  var formData = new FormData();
+  var csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]').value;
+  var receiverId = document.querySelector('input[name="receiver_id"]').value;
+
+  formData.append('csrfmiddlewaretoken', csrfToken);
+  formData.append('receiver_id', receiverId);
+  formData.append('content', content);
+
+  if (fileInput.files.length > 0) {
+    formData.append('attachment', fileInput.files[0]);
+  }
+
+  fetch(window.location.href, {
+    method: 'POST',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest'
+      // DO NOT set Content-Type — browser sets it automatically with boundary for FormData
+    },
+    body: formData
+  })
+  .then(response => response.text())
+  .then(html => {
+    var parser = new DOMParser();
+    var doc = parser.parseFromString(html, 'text/html');
+    var newMessages = doc.querySelector('#chatMessages');
+    if (newMessages) {
+      document.getElementById('chatMessages').innerHTML = newMessages.innerHTML;
+      msgInput.value = '';
+      clearFile();
+      scrollToBottom();
+    }
+  });
+
+  return false;
+}
+
+// Scroll to bottom on page load
+scrollToBottom();
+
+// Handle form submit
+var messageForm = document.getElementById('messageForm');
+if (messageForm) {
+  messageForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    sendMessage();
+  });
+}
+
+var msgInput = document.getElementById('msgInput');
+if (msgInput) {
+  msgInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+  msgInput.focus();
+}
+</script>
+{% endblock %}

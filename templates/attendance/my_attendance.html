@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}My Attendance{% endblock %}
+{% block page_title %}My Attendance{% endblock %}
+
+{% block content %}
+<!-- Summary -->
+<div class="card" style="margin-bottom:20px;">
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div class="stat-card blue" style="flex:1;min-width:160px;">
+            <div class="stat-icon blue"><i class="fa-solid fa-calendar-check"></i></div>
+            <div class="stat-value">{{ this_month_count }}</div>
+            <div class="stat-label">Days Present This Month</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card" style="margin-bottom:20px;">
+    <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+        <div>
+            <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px;">From</label>
+            <input type="date" name="date_from" value="{{ date_from }}" class="form-control">
+        </div>
+        <div>
+            <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px;">To</label>
+            <input type="date" name="date_to" value="{{ date_to }}" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a href="{% url 'my_attendance' %}" class="btn btn-secondary">Reset</a>
+    </form>
+</div>
+
+<!-- Attendance Table -->
+<div class="card">
+    <div class="section-title"><i class="fa-solid fa-fingerprint"></i> Attendance Records</div>
+    {% if page_obj.object_list %}
+    <div class="table-wrapper" style="margin-top:16px;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Check In</th>
+                    <th>Check Out</th>
+                    <th>Worked Hours</th>
+                    <th>Source</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for att in page_obj %}
+                <tr>
+                    <td>{{ att.date|date:"Y-m-d" }}</td>
+                    <td>{{ att.check_in|date:"H:i"|default:"—" }}</td>
+                    <td>{{ att.check_out|date:"H:i"|default:"—" }}</td>
+                    <td>
+                        {% if att.worked_hours %}
+                        {{ att.worked_hours }} hrs
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        <span class="badge badge-{% if att.source == 'zkteco' %}success{% else %}warning{% endif %}">
+                            {{ att.get_source_display }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:16px;">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}&date_from={{ date_from }}&date_to={{ date_to }}"
+            class="btn btn-secondary btn-sm">← Prev</a>
+        {% endif %}
+        <span style="padding:6px 12px;font-size:13px;">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages
+            }}</span>
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&date_from={{ date_from }}&date_to={{ date_to }}"
+            class="btn btn-secondary btn-sm">Next →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div style="text-align:center;padding:40px;color:var(--text3);">
+        <i class="fa-solid fa-clock" style="font-size:40px;margin-bottom:12px;display:block;"></i>
+        No attendance records found
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

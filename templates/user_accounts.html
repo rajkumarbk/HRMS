@@ -1,0 +1,345 @@
+{% extends 'base.html' %}
+{% block title %}User Accounts{% endblock %}
+{% block page_title %}User Accounts Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">User Accounts</div>
+    <div class="page-subtitle">Manage system access for employees</div>
+  </div>
+  <button class="btn btn-primary" onclick="openCreateModal()">
+    <i class="fa-solid fa-user-plus"></i> Create User Account
+  </button>
+</div>
+<style>
+  .role-badge {
+  display: inline-block;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 999px;
+  letter-spacing: 0.3px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(6px);
+  transition: all 0.2s ease;
+}
+
+/* CEO - gold accent */
+.role-ceo {
+  color: #ffcc66;
+  border-color: rgba(255, 204, 102, 0.4);
+  background: rgba(255, 204, 102, 0.08);
+}
+
+/* HR - blue accent */
+.role-hr {
+  color: #66aaff;
+  border-color: rgba(102, 170, 255, 0.4);
+  background: rgba(102, 170, 255, 0.08);
+}
+
+/* Manager - green accent */
+.role-manager {
+  color: #4dd4a3;
+  border-color: rgba(77, 212, 163, 0.4);
+  background: rgba(77, 212, 163, 0.08);
+}
+
+/* Branch Manager - purple accent */
+.role-branch_manager {
+  color: #b388ff;
+  border-color: rgba(179, 136, 255, 0.4);
+  background: rgba(179, 136, 255, 0.08);
+}
+
+/* Officer - cyan accent */
+.role-officer {
+  color: #4dd0e1;
+  border-color: rgba(77, 208, 225, 0.4);
+  background: rgba(77, 208, 225, 0.08);
+}
+
+/* Employee - neutral */
+.role-employee {
+  color: #9aa4b2;
+  border-color: rgba(154, 164, 178, 0.3);
+  background: rgba(154, 164, 178, 0.06);
+}
+
+/* subtle glow on hover */
+.role-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 10px rgba(255,255,255,0.05);
+}
+</style>
+<!-- Users Table -->
+<div class="card animate-fade-up">
+  <div class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Iqama Number</th>
+          <th>Role</th>
+          <th>Account Status</th>
+          <th>Last Login</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for emp in employees %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="emp-avatar">
+                {% if emp.personal_photo %}<img src="{{ emp.personal_photo.url }}" alt="">{% else %}{{ emp.full_name|first|upper }}{% endif %}
+              </div>
+              <div>
+                <div style="font-weight:600;font-size:13.5px;">{{ emp.full_name }}</div>
+                <div style="font-size:12px;color:var(--text3);">{{ emp.job_title|default:"No job title" }}</div>
+              </div>
+            </div>
+          </td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:13px;">{{ emp.iqama_number }}</td>
+          <!-- <td>
+            <span class="badge badge-{% if emp.role == 'hr' %}primary{% else %}gray{% endif %}">
+              {{ emp.get_role_display }}
+            </span>
+          </td> -->
+          <td>
+  <span class="role-badge role-{{ emp.role }}">
+    {{ emp.get_role_display }}
+  </span>
+</td>
+          <td>
+            <span class="badge badge-{% if emp.is_active %}success{% else %}danger{% endif %}">
+              {% if emp.is_active %}Active{% else %}Inactive{% endif %}
+            </span>
+          </td>
+          <td style="font-size:12px;color:var(--text3);">{{ emp.last_login|date:"Y-m-d H:i"|default:"Never" }}</td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <button onclick="openResetModal('{{ emp.pk }}', '{{ emp.full_name }}')" class="btn btn-secondary btn-sm" title="Reset Password">
+                <i class="fa-solid fa-key"></i>
+              </button>
+              <button onclick="toggleUserStatus('{{ emp.pk }}', '{{ emp.is_active }}')" class="btn btn-secondary btn-sm" title="{% if emp.is_active %}Deactivate{% else %}Activate{% endif %}">
+                <i class="fa-solid fa-{% if emp.is_active %}ban{% else %}check-circle{% endif %}"></i>
+              </button>
+              <button onclick="changeRole('{{ emp.pk }}', '{{ emp.role }}')" class="btn btn-secondary btn-sm" title="Change Role">
+                <i class="fa-solid fa-user-tag"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" style="text-align:center;padding:50px;color:var(--text3);">
+            <div style="font-size:40px;margin-bottom:12px;">👤</div>
+            <div>No employees found</div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Create User Modal -->
+<div id="createModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Create User Account</h3>
+      <button class="modal-close" onclick="closeCreateModal()">&times;</button>
+    </div>
+    <form method="post" action="{% url 'create_user_account' %}">
+      {% csrf_token %}
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Select Employee *</label>
+          <select name="employee_id" required>
+            <option value="">-- Select Employee --</option>
+            {% for emp in employees_without_account %}
+            <option value="{{ emp.pk }}">{{ emp.full_name }} ({{ emp.iqama_number }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Password *</label>
+          <input type="password" name="password" required placeholder="Enter password">
+          <small style="font-size:11px;color:var(--text3);">Minimum 8 characters</small>
+        </div>
+        <div class="form-group">
+          <label>Confirm Password *</label>
+          <input type="password" name="confirm_password" required placeholder="Confirm password">
+        </div>
+        <div class="form-group">
+          <label>Role *</label>
+          <select name="role" required>
+            <option value="employee">Employee</option>
+            <option value="hr">HR</option>
+            <option value="manager">Manager</option>
+            <option value="branch_manager">Branch Manager</option>
+            <option value="officer">Officer</option>
+            <option value="ceo">CEO</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Account</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div id="resetModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Reset Password</h3>
+      <button class="modal-close" onclick="closeResetModal()">&times;</button>
+    </div>
+    <form method="post" action="{% url 'reset_user_password' %}">
+      {% csrf_token %}
+      <input type="hidden" name="employee_id" id="reset_employee_id">
+      <div class="modal-body">
+        <p>Reset password for: <strong id="reset_employee_name"></strong></p>
+        <div class="form-group">
+          <label>New Password *</label>
+          <input type="password" name="password" required placeholder="Enter new password">
+        </div>
+        <div class="form-group">
+          <label>Confirm Password *</label>
+          <input type="password" name="confirm_password" required placeholder="Confirm new password">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeResetModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Reset Password</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-content {
+  background: var(--bg2);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 20px 35px rgba(0,0,0,0.3);
+}
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.modal-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+}
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: var(--text3);
+}
+.modal-body {
+  padding: 24px;
+}
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+</style>
+
+<script>
+function openCreateModal() {
+  document.getElementById('createModal').style.display = 'flex';
+}
+function closeCreateModal() {
+  document.getElementById('createModal').style.display = 'none';
+}
+function openResetModal(id, name) {
+  document.getElementById('reset_employee_id').value = id;
+  document.getElementById('reset_employee_name').textContent = name;
+  document.getElementById('resetModal').style.display = 'flex';
+}
+function closeResetModal() {
+  document.getElementById('resetModal').style.display = 'none';
+}
+function toggleUserStatus(id, currentStatus) {
+  if (confirm('Are you sure you want to ' + (currentStatus === 'True' ? 'deactivate' : 'activate') + ' this user?')) {
+    window.location.href = `/users/toggle-status/${id}/`;
+  }
+}
+function changeRole(id, currentRole) {
+  const roles = ['ceo', 'hr', 'manager', 'branch_manager', 'officer', 'employee'];
+  const labels = {
+    'ceo': 'CEO',
+    'hr': 'HR',
+    'manager': 'Manager',
+    'branch_manager': 'Branch Manager',
+    'officer': 'Officer',
+    'employee': 'Employee'
+  };
+
+  let options = roles.map(r => 
+    `<option value="${r}" ${r === currentRole ? 'selected' : ''}>${labels[r]}</option>`
+  ).join('');
+
+  let select = document.createElement('div');
+  select.innerHTML = `
+    <select id="newRoleSelect" style="width:100%;padding:8px;margin-top:8px;border-radius:8px;border:1px solid var(--border);background:var(--input);color:var(--text);">
+      ${options}
+    </select>
+  `;
+
+  // Simple prompt-style modal
+  let modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  modal.innerHTML = `
+    <div style="background:var(--card);border-radius:16px;padding:24px;width:320px;border:1px solid var(--border);">
+      <div style="font-size:16px;font-weight:600;margin-bottom:16px;">Change Employee Role</div>
+      <select id="newRoleSelect" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--input);color:var(--text);font-size:14px;">
+        ${options}
+      </select>
+      <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;">
+        <button onclick="this.closest('div[style*=fixed]').remove()" class="btn btn-secondary btn-sm">Cancel</button>
+        <button onclick="
+          let role = document.getElementById('newRoleSelect').value;
+          window.location.href = '/users/change-role/${id}/' + role + '/';
+        " class="btn btn-primary btn-sm">Save</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+// Close modal when clicking outside
+window.onclick = function(event) {
+  if (event.target.classList.contains('modal')) {
+    event.target.style.display = 'none';
+  }
+}
+</script>
+{% endblock %}

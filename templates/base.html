@@ -1,0 +1,182 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="icon" href="{% static 'img/favicon.png' %}">
+  <title>{% block title %}HR System{% endblock %} | HRMS</title>
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+  <div class="app-wrapper">
+
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">
+  <img src="{% static 'img/favicon.png' %}" alt="HRMS Logo"
+       style="width: 28px; height: 28px; object-fit: contain;">
+</div>
+        <div>
+          <div class="logo-text">HRMS</div>
+          <div class="logo-sub">AlSalem Auto Glass</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-label">Main Menu</div>
+
+        <a href="{% url 'dashboard' %}"
+          class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+          <span class="nav-icon"><i class="fa-solid fa-chart-pie"></i></span>
+          Dashboard
+        </a>
+        {% if request.user.is_hr %}
+
+        <a href="{% url 'employee_list' %}"
+          class="nav-item {% if 'employee' in request.resolver_match.url_name %}active{% endif %}">
+          <span class="nav-icon"><i class="fa-solid fa-users"></i></span>
+          Employee Information
+        </a>
+        <a href="{% url 'attendance_list' %}"
+          class="nav-item {% if 'attendance' in request.resolver_match.url_name %}active{% endif %}">
+          <span class="nav-icon"><i class="fa-solid fa-fingerprint"></i></span>
+          Attendance
+        </a>
+        {% endif %}
+
+        <a href="{% url 'timeoff_list' %}"
+          class="nav-item {% if 'timeoff' in request.resolver_match.url_name %}active{% endif %}">
+          <span class="nav-icon"><i class="fa-solid fa-calendar-days"></i></span>
+          Time Off
+          {% if pending_count %}<span class="nav-badge">{{ pending_count }}</span>{% endif %}
+        </a>
+
+
+        <a href="{% url 'discuss' %}"
+          class="nav-item {% if 'discuss' in request.resolver_match.url_name %}active{% endif %}">
+          <span class="nav-icon"><i class="fa-solid fa-comments"></i></span>
+          Discuss
+          {% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}
+        </a>
+        <a href="{% url 'advance_salary_list' %}" class="nav-item {% if 'advance' in request.resolver_match.url_name %}active{% endif %}">
+        <span class="nav-icon"><i class="fa-solid fa-money-bill-wave"></i></span>
+        Advance Salary
+        {% if pending_advance_count %}<span class="nav-badge">{{ pending_advance_count }}</span>{% endif %}
+      </a>
+
+        {% if request.user.is_hr %}
+        <a href="{% url 'user_accounts' %}"
+          class="nav-item {% if 'user_accounts' in request.resolver_match.url_name %}active{% endif %}">
+          <span class="nav-icon"><i class="fa-solid fa-user-gear"></i></span>
+          User Accounts
+        </a>
+
+
+        <a href="{% url 'asset_handover_list' %}"
+          class="nav-item {% if 'asset' in request.resolver_match.url_name %}active{% endif %}">
+          <span class="nav-icon"><i class="fa-solid fa-boxes"></i></span>
+          Asset Management
+        </a>
+
+
+        {% endif %}
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-card">
+          <div class="user-avatar">
+            {% if request.user.personal_photo %}
+            <img src="{{ request.user.personal_photo.url }}" alt="">
+            {% else %}
+            {{ request.user.full_name|first|upper }}
+            {% endif %}
+          </div>
+          <div>
+            <div class="user-name">{{ request.user.full_name|truncatechars:20 }}</div>
+            <div class="user-role">{{ request.user.job_title|default:"Employee"|truncatechars:22 }}</div>
+          </div>
+          <a href="{% url 'logout' %}" style="margin-left:auto;color:var(--text3);font-size:15px;" title="Logout"><i
+              class="fa-solid fa-right-from-bracket"></i></a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <button class="hamburger" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+        <span class="topbar-title">{% block page_title %}Dashboard{% endblock %}</span>
+        <div class="topbar-right">
+          <!-- <a href="{% url 'timeoff_create' %}" class="topbar-btn" title="New Leave Request"><i class="fa-solid fa-plus"></i></a> -->
+          <a href="{% url 'discuss' %}" class="topbar-btn" title="Messages"><i class="fa-solid fa-bell"></i></a>
+          {% if request.user.is_staff %}
+          <a href="/admin/" class="topbar-btn" title="Admin"><i class="fa-solid fa-gear"></i></a>
+          {% endif %}
+        </div>
+      </header>
+
+      <!-- PAGE CONTENT -->
+      <main class="page-content">
+        {% if messages %}
+        {% for msg in messages %}
+        <div
+          class="alert alert-{% if msg.tags == 'error' %}error{% elif msg.tags == 'success' %}success{% else %}info{% endif %} animate-fade-up">
+          <i
+            class="fa-solid fa-{% if msg.tags == 'error' %}circle-xmark{% elif msg.tags == 'success' %}circle-check{% else %}circle-info{% endif %}"></i>
+          {{ msg }}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('sidebarOverlay').classList.remove('active');
+    }
+  </script>
+  {% block extra_js %}{% endblock %}
+  <!-- Country API -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script>
+    // Initialize select2 for country dropdown
+    $(document).ready(function () {
+      $('#country-select').select2({
+        placeholder: 'Search for a country',
+        allowClear: true,
+        ajax: {
+          url: 'https://restcountries.com/v3.1/all',
+          dataType: 'json',
+          processResults: function (data) {
+            const countries = data.map(country => ({
+              id: country.name.common,
+              text: country.name.common
+            })).sort((a, b) => a.text.localeCompare(b.text));
+            return { results: countries };
+          }
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>

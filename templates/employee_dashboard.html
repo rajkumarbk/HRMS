@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% block title %}My Dashboard{% endblock %}
+{% block page_title %}My Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    .info-card {
+        background: var(--card);
+        border-radius: 20px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border: 1px solid var(--border);
+    }
+    .info-row {
+        display: flex;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+    }
+    .info-label {
+        width: 150px;
+        font-size: 13px;
+        color: var(--text3);
+        font-weight: 500;
+    }
+    .info-value {
+        flex: 1;
+        font-size: 14px;
+        color: var(--text);
+    }
+    .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--accent);
+        display: inline-block;
+    }
+</style>
+
+<!-- Welcome Section -->
+<div class="card stagger-1" style="margin-bottom:20px;">
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+        <div style="width:80px;height:80px;border-radius:20px;overflow:hidden;background:linear-gradient(135deg,var(--accent3),var(--accent));display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;">
+            {% if employee.personal_photo %}<img src="{{ employee.personal_photo.url }}" style="width:100%;height:100%;object-fit:cover;">{% else %}{{ employee.full_name|first|upper }}{% endif %}
+        </div>
+        <div>
+            <div style="font-size:24px;font-weight:700;">Hello, {{ employee.full_name }}! 👋</div>
+            <div style="color:var(--text3);margin-top:4px;">{{ employee.job_title|default:"Employee" }} • {{ employee.department.name|default:"No Department" }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid-4" style="margin-bottom:24px;">
+    <div class="stat-card blue stagger-1">
+        <div class="stat-icon blue"><i class="fa-solid fa-calendar-check"></i></div>
+        <div class="stat-value">{{ attendance_this_month }}</div>
+        <div class="stat-label">Days Present (This Month)</div>
+    </div>
+    <div class="stat-card cyan stagger-2">
+        <div class="stat-icon cyan"><i class="fa-solid fa-hourglass-half"></i></div>
+        <div class="stat-value">{{ pending_leaves }}</div>
+        <div class="stat-label">Pending Leaves</div>
+    </div>
+    <div class="stat-card green stagger-3">
+        <div class="stat-icon green"><i class="fa-solid fa-check-circle"></i></div>
+        <div class="stat-value">{{ approved_leaves }}</div>
+        <div class="stat-label">Approved Leaves</div>
+    </div>
+    <!-- <div class="stat-card purple stagger-4">
+        <div class="stat-icon purple"><i class="fa-solid fa-envelope"></i></div>
+        <div class="stat-value">{{ unread_messages }}</div>
+        <div class="stat-label">Unread Messages</div>
+    </div> -->
+    <div class="stat-card purple stagger-4">
+    <div class="stat-icon orange"><i class="fa-solid fa-money-bill-wave"></i></div>
+    <div class="stat-value">{{ advance_pending }}</div>
+    <div class="stat-label">Pending Advance Requests</div>
+</div>
+</div>
+
+<div class="grid-2">
+    <!-- My Information -->
+    <div class="card stagger-5">
+        <div class="section-title"><i class="fa-solid fa-user"></i> My Information</div>
+        <div class="info-card" style="margin-top:16px;">
+            <div class="info-row">
+                <div class="info-label">Full Name</div>
+                <div class="info-value">{{ employee.full_name }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Iqama Number</div>
+                <div class="info-value">{{ employee.iqama_number }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Job Title</div>
+                <div class="info-value">{{ employee.job_title|default:"—" }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Department</div>
+                <div class="info-value">{{ employee.department.name|default:"—" }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Branch</div>
+                <div class="info-value">{{ employee.branch|default:"—" }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Mobile Number</div>
+                <div class="info-value">{{ employee.mobile_number|default:"—" }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Email</div>
+                <div class="info-value">{{ employee.email|default:"—" }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Hiring Date</div>
+                <div class="info-value">{{ employee.hiring_date|date:"Y-m-d"|default:"—" }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Employment Status</div>
+                <div class="info-value">
+                    <span class="badge badge-{% if employee.employment_status == 'active' %}success{% else %}danger{% endif %}">
+                        {{ employee.get_employment_status_display }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div style="margin-top:16px;">
+            <a href="{% url 'employee_detail' employee.pk %}" class="btn btn-secondary btn-sm">
+                <i class="fa-solid fa-edit"></i> Edit My Profile
+            </a>
+        </div>
+    </div>
+
+    <!-- Today's Attendance -->
+    <div class="card stagger-6">
+        <div class="section-title"><i class="fa-solid fa-fingerprint"></i> Today's Attendance</div>
+        <div style="margin-top:16px;">
+            {% if attendance_today %}
+                <div style="text-align:center;padding:20px;">
+                    <div style="font-size:48px;color:var(--success);margin-bottom:10px;">✓</div>
+                    <div style="font-size:16px;font-weight:600;">Checked In</div>
+                    <div style="margin-top:10px;">
+                        <div>Check In: <strong>{{ attendance_today.check_in|date:"H:i" }}</strong></div>
+                        {% if attendance_today.check_out %}
+                        <div>Check Out: <strong>{{ attendance_today.check_out|date:"H:i" }}</strong></div>
+                        <div>Worked: <strong>{{ attendance_today.worked_hours }} hours</strong></div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <div style="text-align:center;padding:30px;color:var(--text3);">
+                    <i class="fa-solid fa-clock" style="font-size:40px;margin-bottom:10px;display:block;"></i>
+                    Not checked in yet today
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Recent Time Off Requests -->
+<div class="card stagger-7">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+        <div class="section-title" style="margin-bottom:0;"><i class="fa-solid fa-calendar-days"></i> Recent Leave Requests</div>
+        <a href="{% url 'timeoff_list' %}" class="btn btn-secondary btn-sm">View All</a>
+    </div>
+    {% if recent_leave_requests %}
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+                <tr><th>Leave Type</th><th>Date From</th><th>Date To</th><th>Days</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                {% for req in recent_leave_requests %}
+                <tr>
+                    <td>{{ req.leave_type.name }}</td>
+                    <td>{{ req.date_from|date:"Y-m-d" }}</td>
+                    <td>{{ req.date_to|date:"Y-m-d" }}</td>
+                    <td>{{ req.days_count }}</td>
+                    <td><span class="badge badge-{% if req.status == 'approved' %}success{% elif req.status == 'pending' %}warning{% else %}danger{% endif %}">{{ req.get_status_display }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:30px;color:var(--text3);">No leave requests found</div>
+    {% endif %}
+</div>
+
+<!-- Recent Attendance History -->
+<div class="card stagger-8">
+    <div class="section-title"><i class="fa-solid fa-history"></i> Recent Attendance History</div>
+    {% if recent_attendance %}
+    <div class="table-wrapper" style="margin-top:16px;">
+        <table class="table">
+            <thead>
+                <tr><th>Date</th><th>Check In</th><th>Check Out</th><th>Worked Hours</th></tr>
+            </thead>
+            <tbody>
+                {% for att in recent_attendance %}
+                <tr>
+                    <td>{{ att.date|date:"Y-m-d" }}</td>
+                    <td>{{ att.check_in|date:"H:i"|default:"—" }}</td>
+                    <td>{{ att.check_out|date:"H:i"|default:"—" }}</td>
+                    <td>{{ att.worked_hours }} hrs</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:30px;color:var(--text3);">No attendance records found</div>
+    {% endif %}
+</div>
+
+<!-- Quick Actions -->
+<div class="card">
+    <div class="section-title"><i class="fa-solid fa-bolt"></i> Quick Actions</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;">
+        <a href="{% url 'timeoff_create' %}" class="btn btn-primary"><i class="fa-solid fa-calendar-plus"></i> Request Leave</a>
+        <a href="{% url 'attendance_list' %}" class="btn btn-secondary"><i class="fa-solid fa-fingerprint"></i> View Attendance</a>
+        <a href="{% url 'discuss' %}" class="btn btn-secondary"><i class="fa-solid fa-comments"></i> Messages</a>
+        <a href="{% url 'my_attendance' %}" class="btn btn-secondary">
+    <i class="fa-solid fa-fingerprint"></i> My Attendance
+</a>
+        <a href="{% url 'employee_detail' employee.pk %}" class="btn btn-secondary"><i class="fa-solid fa-user"></i> My Profile</a>
+    </div>
+</div>
+
+{% endblock %}

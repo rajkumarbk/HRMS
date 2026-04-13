@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Advance Salary Requests{% endblock %}
+{% block page_title %}Advance Salary Requests{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Advance Salary Requests</div>
+    <div class="page-subtitle">
+      {% if request.user.is_hr %}All employee advance requests{% else %}Your advance salary requests{% endif %}
+    </div>
+  </div>
+  <a href="{% url 'advance_salary_create' %}" class="btn btn-primary">
+    <i class="fa-solid fa-plus"></i> New Request
+  </a>
+</div>
+
+<!-- Status Filter -->
+<div class="card" style="margin-bottom:20px;">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <a href="{% url 'advance_salary_list' %}" class="btn {% if not status_filter %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">All</a>
+    <a href="?status=pending" class="btn {% if status_filter == 'pending' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Pending</a>
+    <a href="?status=approved" class="btn {% if status_filter == 'approved' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Approved</a>
+    <a href="?status=paid" class="btn {% if status_filter == 'paid' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Paid</a>
+    <a href="?status=rejected" class="btn {% if status_filter == 'rejected' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Rejected</a>
+  </div>
+</div>
+
+<!-- Table -->
+<div class="card">
+  {% if advances %}
+  <div class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          {% if request.user.is_hr %}<th>Employee</th>{% endif %}
+          <th>Amount (SAR)</th>
+          <th>Reason</th>
+          <th>Repayment Month</th>
+          <th>Requested</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for adv in advances %}
+        <tr>
+          {% if request.user.is_hr %}
+          <td>
+            <div style="font-weight:600;">{{ adv.employee.full_name }}</div>
+            <div style="font-size:12px;color:var(--text3);">{{ adv.employee.job_title|default:"—" }}</div>
+          </td>
+          {% endif %}
+          <td style="font-weight:700;color:var(--accent);">{{ adv.amount|floatformat:2 }}</td>
+          <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ adv.reason|default:"—" }}</td>
+          <td>{{ adv.repayment_month|default:"—" }}</td>
+          <td>{{ adv.requested_date|date:"Y-m-d" }}</td>
+          <td>
+            <span class="badge badge-{% if adv.status == 'approved' %}success{% elif adv.status == 'pending' %}warning{% elif adv.status == 'paid' %}info{% else %}danger{% endif %}">
+              {{ adv.get_status_display }}
+            </span>
+          </td>
+          <td>
+  {% if adv.user_can_approve %}
+  <form method="post" action="{% url 'advance_salary_approve' adv.pk %}" style="display:inline;">
+    {% csrf_token %}
+    <button class="btn btn-success btn-sm" title="Approve">
+      <i class="fa-solid fa-check"></i>
+    </button>
+  </form>
+  {% endif %}
+
+  {% if adv.user_can_refuse %}
+  <form method="post" action="{% url 'advance_salary_refuse' adv.pk %}" style="display:inline;"
+    onsubmit="return confirm('Reject this request?')">
+    {% csrf_token %}
+    <input type="hidden" name="reason" value="">
+    <button class="btn btn-danger btn-sm" title="Reject">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </form>
+  {% endif %}
+
+  <a href="{% url 'advance_salary_review' adv.pk %}" class="btn btn-secondary btn-sm" title="View">
+    <i class="fa-solid fa-eye"></i>
+  </a>
+
+  {% if request.user.role == "hr" %}
+<form method="post" action="{% url 'advance_salary_delete' adv.pk %}" style="display:inline;"
+  onsubmit="return confirm('Delete this request?')">
+  {% csrf_token %}
+  <button class="btn btn-sm" style="background:var(--danger-soft);color:var(--danger);">
+    <i class="fa-solid fa-trash"></i>
+  </button>
+</form>
+{% endif %}
+
+  {% if not adv.user_can_approve and not adv.user_can_refuse and not request.user.role == "hr" %}
+    {% if adv.approval_state != "paid" and adv.approval_state != "rejected" %}
+      <span style="font-size:12px;color:var(--text3);">Awaiting review</span>
+    {% endif %}
+  {% endif %}
+</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:40px;color:var(--text3);">
+    <i class="fa-solid fa-money-bill-wave" style="font-size:40px;margin-bottom:12px;display:block;"></i>
+    No advance salary requests found
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

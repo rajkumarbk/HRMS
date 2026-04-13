@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Hello, {{ request.user.full_name|truncatechars:25 }} 👋</div>
+    <div class="page-subtitle">Here's what's happening today</div>
+  </div>
+  <a href="{% url 'employee_create' %}" class="btn btn-primary">
+    <i class="fa-solid fa-plus"></i> Add Employee
+  </a>
+</div>
+
+<!-- Stats -->
+<div class="grid-4" style="margin-bottom:24px;">
+  <div class="stat-card blue stagger-1">
+    <div class="stat-icon blue"><i class="fa-solid fa-users" style="color:var(--accent)"></i></div>
+    <div class="stat-value">{{ total_employees }}</div>
+    <div class="stat-label">Active Employees</div>
+  </div>
+  <div class="stat-card cyan stagger-2">
+    <div class="stat-icon cyan"><i class="fas fa-hourglass-half" style="color:var(--accent2)"></i></div>
+    <div class="stat-value">{{ pending_leaves }}</div>
+    <div class="stat-label">Pending Leaves</div>
+  </div>
+  <div class="stat-card green stagger-3">
+    <div class="stat-icon green"><i class="fa-solid fa-circle-check" style="color:var(--success)"></i></div>
+    <div class="stat-value">{{ present_today }}</div>
+    <div class="stat-label">Present Today</div>
+  </div>
+  <div class="stat-card purple stagger-4">
+    <div class="stat-icon purple"><i class="fa-solid fa-comment-dots" style="color:var(--accent3)"></i></div>
+    <div class="stat-value">{{ unread_messages }}</div>
+    <div class="stat-label">Unread Messages</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- Recent Employees -->
+  <div class="card stagger-5">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <div style="font-weight:600;font-size:15px;"><i class="fa-solid fa-users" style="color:var(--accent2);margin-right:8px;"></i>Recent Employees</div>
+      <a href="{% url 'employee_list' %}" class="btn btn-secondary btn-sm">View All</a>
+    </div>
+    {% for emp in recent_employees %}
+    <a href="{% url 'employee_detail' emp.pk %}" style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);text-decoration:none;color:var(--text);transition:all 0.2s;" onmouseover="this.style.paddingLeft='8px'" onmouseout="this.style.paddingLeft='0'">
+      <div class="emp-avatar">
+        {% if emp.personal_photo %}<img src="{{ emp.personal_photo.url }}" alt="">{% else %}{{ emp.full_name|first|upper }}{% endif %}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ emp.full_name }}</div>
+        <div style="font-size:12px;color:var(--text3);">{{ emp.job_title|default:"—" }}</div>
+      </div>
+      <span class="badge badge-{% if emp.employment_status == 'active' %}success{% elif emp.employment_status == 'suspended' %}warning{% else %}danger{% endif %}">
+        {{ emp.get_employment_status_display }}
+      </span>
+    </a>
+    {% empty %}
+    <div style="text-align:center;color:var(--text3);padding:30px 0;font-size:13px;">No employees yet</div>
+    {% endfor %}
+  </div>
+
+  <!-- Recent Leave Requests -->
+  <div class="card stagger-6">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <div style="font-weight:600;font-size:15px;"><i class="fa-solid fa-calendar-days" style="color:var(--accent3);margin-right:8px;"></i>Recent Leave Requests</div>
+      <a href="{% url 'timeoff_list' %}" class="btn btn-secondary btn-sm">View All</a>
+    </div>
+    {% for req in recent_leaves %}
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <div class="emp-avatar" style="background:linear-gradient(135deg,var(--accent3),var(--accent2));">
+    {% if req.employee.personal_photo %}
+      <img src="{{ req.employee.personal_photo.url }}" alt="">
+    {% else %}
+      {{ req.employee.full_name|first|upper }}
+    {% endif %}
+  </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ req.employee.full_name }}</div>
+        <div style="font-size:12px;color:var(--text3);">{{ req.leave_type.name }} &bull; {{ req.days_count }} day{{ req.days_count|pluralize }}</div>
+      </div>
+      <span class="badge badge-{% if req.status == 'approved' %}success{% elif req.status == 'refused' %}danger{% elif req.status == 'cancelled' %}gray{% else %}warning{% endif %}">
+        {{ req.get_status_display }}
+      </span>
+    </div>
+    {% empty %}
+    <div style="text-align:center;color:var(--text3);padding:30px 0;font-size:13px;">No leave requests</div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Quick Actions -->
+ 
+<div class="card" style="margin-top:20px;">
+  <div style="font-weight:600;font-size:15px;margin-bottom:16px;"><i class="fa-solid fa-bolt" style="color:var(--warning);margin-right:8px;"></i>Quick Actions</div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <a href="{% url 'employee_create' %}" class="btn btn-secondary"><i class="fa-solid fa-user-plus"></i> New Employee</a>
+    <a href="{% url 'timeoff_create' %}" class="btn btn-secondary"><i class="fa-solid fa-calendar-plus"></i> Request Leave</a>
+    <a href="{% url 'attendance_list' %}" class="btn btn-secondary"><i class="fa-solid fa-fingerprint"></i> View Attendance</a>
+    <a href="{% url 'discuss' %}" class="btn btn-secondary"><i class="fa-solid fa-comment-medical"></i> Send Message</a>
+    <a href="{% url 'device_add' %}" class="btn btn-secondary"><i class="fa-solid fa-network-wired"></i> Add ZKTeco Device</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,355 @@
+{% extends 'base.html' %}
+{% block title %}Asset Handover{% endblock %}
+{% block page_title %}Asset Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Asset Handover & Return</div>
+    <div class="page-subtitle">Track assets issued to employees</div>
+  </div>
+  <button class="btn btn-primary" onclick="openHandoverModal()">
+    <i class="fa-solid fa-hand-holding"></i> New Handover
+  </button>
+</div>
+
+<!-- Tabs -->
+<!-- <div class="tabs">
+  <button class="tab-btn active" onclick="showTab('handover')">
+    <i class="fa-solid fa-hand-holding"></i> Handover (Issued)
+  </button>
+  <button class="tab-btn" onclick="showTab('return')">
+    <i class="fa-solid fa-undo-alt"></i> Return (Received)
+  </button>
+</div> -->
+
+<!-- Tab 1: Handover (Issued Assets) -->
+<div id="tab-handover" class="tab-content active">
+  <div class="card">
+    <div class="table-wrapper">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Asset Name</th>
+            <th>Custody Type</th>
+            <th>Handed Over To</th>
+            <th>Handover Date</th>
+            <th>Expected Return</th>
+            <th>Serial/Model</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for asset in handover_assets %}
+          <tr>
+            <td><strong>{{ asset.name }}</strong></td>
+            <td>{{ asset.get_custody_type_display }}</td>
+            <td>
+              <a href="{% url 'employee_detail' asset.assigned_to.pk %}">{{ asset.assigned_to.full_name }}</a>
+              <div style="font-size:11px;color:var(--text3);">{{ asset.assigned_to.job_title|default:"" }}</div>
+            </td>
+            <td>{{ asset.assigned_date|date:"Y-m-d" }}</td>
+            <td>{{ asset.expected_return_date|date:"Y-m-d"|default:"—" }}</td>
+            <td style="font-size:12px;">{{ asset.serial_number|default:"" }}<br>{{ asset.model_number|default:"" }}</td>
+            <td>
+              <button class="btn btn-success btn-sm return-btn" data-id="{{ asset.id }}" data-name="{{ asset.name }}">
+                <i class="fa-solid fa-undo"></i> Return
+              </button>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" style="text-align:center;padding:50px;color:var(--text3);">
+              <div style="font-size:40px;margin-bottom:12px;">📦</div>
+              <div>No assets currently handed over</div>
+              <div style="font-size:12px;margin-top:8px;">Click "New Handover" to issue an asset</div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Tab 2: Return (Returned Assets History) -->
+<div id="tab-return" class="tab-content">
+  <div class="card">
+    <div class="table-wrapper">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Asset Name</th>
+            <th>Custody Type</th>
+            <th>Previously With</th>
+            <th>Handover Date</th>
+            <th>Return Date</th>
+            <th>Condition</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for asset in returned_assets %}
+          <tr>
+            <td><strong>{{ asset.name }}</strong></td>
+            <td>{{ asset.get_custody_type_display }}</td>
+            <td>{{ asset.assigned_to.full_name|default:"—" }}</td>
+            <td>{{ asset.assigned_date|date:"Y-m-d" }}</td>
+            <td>{{ asset.returned_date|date:"Y-m-d" }}</td>
+            <td>
+              <span
+                class="badge {% if 'good' in asset.condition_on_return|lower or 'excellent' in asset.condition_on_return|lower %}badge-success{% else %}badge-warning{% endif %}">
+                {{ asset.condition_on_return|default:"—" }}
+              </span>
+            </td>
+            <td style="max-width:200px;font-size:12px;">{{ asset.notes|truncatechars:50 }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" style="text-align:center;padding:50px;color:var(--text3);">
+              <div style="font-size:40px;margin-bottom:12px;">🔄</div>
+              <div>No return records yet</div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Handover Modal -->
+<div id="handoverModal" class="modal" style="display:none;">
+  <div class="modal-content" style="max-width:600px;">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-hand-holding"></i> Handover Asset</h3>
+      <button class="modal-close" onclick="closeHandoverModal()">&times;</button>
+    </div>
+    <form method="post" action="{% url 'asset_handover' %}">
+      {% csrf_token %}
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Asset Name *</label>
+          <input type="text" name="name" required placeholder="e.g. Dell Laptop, Toyota Camry">
+        </div>
+        <div class="form-group">
+          <label>Custody Type *</label>
+          <select name="custody_type" required>
+            <option value="">Select Type</option>
+            <option value="office_equipment">Office Equipment Custody</option>
+            <option value="vehicle">Vehicle Custody</option>
+            <option value="it_equipment">IT / Technical Equipment Custody</option>
+            <option value="cash">Cash Custody</option>
+            <option value="documents">Documents / Records Custody</option>
+            <option value="tools">Tools / Equipment Custody</option>
+            <option value="other">Special / Other Custody</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Handover To (Employee) *</label>
+          <select name="assigned_to_id" required>
+            <option value="">Select Employee</option>
+            {% for emp in employees %}
+            <option value="{{ emp.id }}">{{ emp.full_name }} ({{ emp.job_title|default:"No title" }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Handover Date *</label>
+            <input type="date" name="assigned_date" required value="{% now 'Y-m-d' %}">
+          </div>
+          <div class="form-group">
+            <label>Expected Return Date</label>
+            <input type="date" name="expected_return_date">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Serial Number</label>
+          <input type="text" name="serial_number" placeholder="Serial number">
+        </div>
+        <div class="form-group">
+          <label>Model Number</label>
+          <input type="text" name="model_number" placeholder="Model number">
+        </div>
+        <div class="form-group">
+          <label>Condition on Handover</label>
+          <textarea name="condition_on_handover" rows="2" placeholder="e.g. New, Good, Minor scratches"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Additional Notes</label>
+          <textarea name="notes" rows="2" placeholder="Any additional information"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeHandoverModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-hand-holding"></i> Handover Asset</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Return Modal -->
+<div id="returnModal" class="modal" style="display:none;">
+  <div class="modal-content" style="max-width:500px;">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-undo-alt"></i> Return Asset</h3>
+      <button class="modal-close" onclick="closeReturnModal()">&times;</button>
+    </div>
+    <form method="post" action="{% url 'asset_return' %}">
+      {% csrf_token %}
+      <input type="hidden" name="asset_id" id="return_asset_id">
+      <div class="modal-body">
+        <p>Returning asset: <strong id="return_asset_name"></strong></p>
+        <div class="form-group">
+          <label>Return Date *</label>
+          <input type="date" name="returned_date" required value="{% now 'Y-m-d' %}">
+        </div>
+        <div class="form-group">
+          <label>Condition on Return *</label>
+          <select name="condition_on_return" required>
+            <option value="">Select Condition</option>
+            <option value="Excellent">Excellent</option>
+            <option value="Good">Good</option>
+            <option value="Fair">Fair</option>
+            <option value="Poor">Poor</option>
+            <option value="Damaged">Damaged</option>
+            <option value="Missing Parts">Missing Parts</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Return Notes</label>
+          <textarea name="notes" rows="2" placeholder="Any damage, missing items, or remarks"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeReturnModal()">Cancel</button>
+        <button type="submit" class="btn btn-success"><i class="fa-solid fa-check"></i> Confirm Return</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .modal-content {
+    background: var(--bg2);
+    border-radius: 20px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 35px rgba(0, 0, 0, 0.3);
+  }
+
+  .modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    background: var(--bg2);
+  }
+
+  .modal-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: var(--text3);
+  }
+
+  .modal-body {
+    padding: 24px;
+  }
+
+  .modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+</style>
+
+<script>
+  function showTab(tab) {
+    // Hide all tabs
+    document.getElementById('tab-handover').classList.remove('active');
+    document.getElementById('tab-return').classList.remove('active');
+
+    // Remove active class from all tab buttons
+    var btns = document.querySelectorAll('.tab-btn');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.remove('active');
+    }
+
+    // Show selected tab
+    if (tab === 'handover') {
+      document.getElementById('tab-handover').classList.add('active');
+      btns[0].classList.add('active');
+    } else {
+      document.getElementById('tab-return').classList.add('active');
+      btns[1].classList.add('active');
+    }
+  }
+
+  function openHandoverModal() {
+    document.getElementById('handoverModal').style.display = 'flex';
+  }
+
+  function closeHandoverModal() {
+    document.getElementById('handoverModal').style.display = 'none';
+  }
+
+  function closeReturnModal() {
+    document.getElementById('returnModal').style.display = 'none';
+  }
+
+  // Setup return button event listeners
+  document.addEventListener('DOMContentLoaded', function () {
+    var returnBtns = document.querySelectorAll('.return-btn');
+    for (var i = 0; i < returnBtns.length; i++) {
+      returnBtns[i].addEventListener('click', function () {
+        var assetId = this.getAttribute('data-id');
+        var assetName = this.getAttribute('data-name');
+        document.getElementById('return_asset_id').value = assetId;
+        document.getElementById('return_asset_name').textContent = assetName;
+        document.getElementById('returnModal').style.display = 'flex';
+      });
+    }
+  });
+
+  // Close modal when clicking outside
+  window.onclick = function (event) {
+    if (event.target.classList.contains('modal')) {
+      event.target.style.display = 'none';
+    }
+  }
+</script>
+{% endblock %}

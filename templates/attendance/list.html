@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Attendance{% endblock %}
+{% block page_title %}Attendance{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Attendance</div>
+    <div class="page-subtitle">ZKTeco integration & attendance tracking</div>
+  </div>
+  <!-- <a href="{% url 'device_add' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Device</a> -->
+</div>
+
+<!-- Devices -->
+{% if devices %}
+<div style="margin-bottom:24px;">
+  <div style="font-size:14px;font-weight:600;color:var(--text2);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+    <i class="fa-solid fa-network-wired" style="color:var(--accent2)"></i> My Devices
+  </div>
+  <div class="grid-3">
+    {% for device in devices %}
+    <div class="device-card stagger-{{ forloop.counter }}">
+      <div class="device-icon">🖥️</div>
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:14px;">{{ device.name }}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:3px;font-family:'JetBrains Mono',monospace;">{{ device.ip_address }}:{{ device.port }}</div>
+        <div style="font-size:12px;color:var(--text3);">{{ device.location|default:"No location" }}</div>
+        <div style="margin-top:6px;">
+          <span class="status-dot {% if device.is_active %}online{% else %}offline{% endif %}"></span>
+          <span style="font-size:12px;color:{% if device.is_active %}var(--success){% else %}var(--text3){% endif %}">
+            {% if device.is_active %}Active{% else %}Inactive{% endif %}
+          </span>
+          {% if device.last_sync %}
+          <span style="font-size:11px;color:var(--text3);margin-left:8px;">Last sync: {{ device.last_sync|date:"M d, H:i" }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div>
+        <a href="{% url 'attendance_sync' device.pk %}" class="btn btn-secondary btn-sm">
+          <i class="fa-solid fa-rotate"></i> Sync
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="card" style="margin-bottom:24px;text-align:center;padding:40px;">
+  <div style="font-size:50px;margin-bottom:16px;">🖥️</div>
+  <div style="font-size:16px;font-weight:600;margin-bottom:8px;">No ZKTeco Devices Connected</div>
+  <div style="color:var(--text3);font-size:13px;margin-bottom:20px;">Add your ZKTeco biometric machine to start syncing attendance records.</div>
+  <a href="{% url 'device_add' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add First Device</a>
+</div>
+{% endif %}
+
+
+<!-- Today's Attendance Table -->
+{% if request.user.is_hr and devices %}
+<div class="table-wrapper animate-fade-up" style="margin-bottom:24px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;background:var(--bg3);border-bottom:1px solid var(--border);">
+    <div style="font-weight:600;font-size:14px;">
+      <i class="fa-solid fa-microchip" style="color:var(--accent2);margin-right:8px;"></i>Biometric Devices
+    </div>
+    <a href="{% url 'device_add' %}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Add Device</a>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>IP / Port</th>
+        <th>Location</th>
+        <th>Status</th>
+        <th>Last Sync</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for device in devices %}
+      <tr>
+        <td style="font-weight:600;">{{ device.name }}</td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">{{ device.ip_address }}:{{ device.port }}</td>
+        <td style="color:var(--text3);">{{ device.location|default:"—" }}</td>
+        <td>
+          {% if device.connection_status %}
+          <span class="badge badge-success">● Connected</span>
+          {% else %}
+          <span class="badge badge-danger">● Offline</span>
+          {% endif %}
+        </td>
+        <td style="font-size:12px;color:var(--text3);">{{ device.last_sync|date:"M d, Y H:i"|default:"Never" }}</td>
+        <td style="display:flex;gap:6px;">
+          <a href="{% url 'device_detail' device.pk %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-eye"></i> View</a>
+          <a href="{% url 'device_sync' device.pk %}" class="btn btn-primary btn-sm"><i class="fa-solid fa-rotate"></i> Sync</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% elif request.user.is_hr %}
+<div style="margin-bottom:24px;">
+  <a href="{% url 'device_add' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Biometric Device</a>
+</div>
+{% endif %}
+{% endblock %}

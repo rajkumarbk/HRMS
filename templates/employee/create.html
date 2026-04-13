@@ -1,0 +1,426 @@
+{% extends 'base.html' %}
+{% block title %}New Employee{% endblock %}
+{% block page_title %}Add Employee{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">New Employee</div>
+    <div class="page-subtitle">Default password will be set to <strong>12345678</strong></div>
+  </div>
+  <a href="{% url 'employee_list' %}" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i> Back</a>
+</div>
+
+<!-- Tabs (JS-driven, NOT separate page loads) -->
+<div class="tabs">
+  <a href="#" class="tab-btn active" data-tab="basic"><i class="fa-solid fa-user"></i> Basic Info</a>
+  <a href="#" class="tab-btn" data-tab="contact"><i class="fa-solid fa-address-book"></i> Contact</a>
+  <a href="#" class="tab-btn" data-tab="work"><i class="fa-solid fa-briefcase"></i> Work & Schedule</a>
+  <a href="#" class="tab-btn" data-tab="financial"><i class="fa-solid fa-money-bill-wave"></i> Financial</a>
+  <a href="#" class="tab-btn" data-tab="documents"><i class="fa-solid fa-folder-open"></i> Documents</a>
+</div>
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}" style="margin-bottom:16px;padding:12px 16px;border-radius:10px;background:var(--danger-soft,#fee2e2);color:var(--danger,#dc2626);font-size:14px;">
+      {{ message }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<!-- Single form — all tabs rendered, toggled by JS -->
+<form method="post" enctype="multipart/form-data" class="animate-fade" id="employee-form">
+  {% csrf_token %}
+
+  <!-- ───── BASIC INFO ───── -->
+  <div class="card tab-panel" id="panel-basic">
+    <div style="font-size:14px;font-weight:600;color:var(--accent2);margin-bottom:20px;display:flex;align-items:center;gap:8px;">
+      <i class="fa-solid fa-user"></i> Personal Information
+    </div>
+    <div class="grid-3">
+      <div class="form-group">
+        <label>Full Name (as per ID) *</label>
+        <input type="text" name="full_name" required placeholder="Enter full name" value="{{ request.POST.full_name|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Iqama / ID Number *</label>
+        <input type="text" name="iqama_number" required placeholder="Enter Iqama number" value="{{ request.POST.iqama_number|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Nationality</label>
+        <input type="text" name="nationality" placeholder="e.g. Saudi" value="{{ request.POST.nationality|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Date of Birth</label>
+        <input type="date" name="date_of_birth" value="{{ request.POST.date_of_birth|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Place of Birth</label>
+        <input type="text" name="place_of_birth" placeholder="City of birth" value="{{ request.POST.place_of_birth|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Gender</label>
+        <select name="gender">
+          <option value="">Select</option>
+          <option value="male" {% if request.POST.gender == 'male' %}selected{% endif %}>Male</option>
+          <option value="female" {% if request.POST.gender == 'female' %}selected{% endif %}>Female</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Marital Status</label>
+        <select name="marital_status">
+          <option value="">Select</option>
+          <option value="single" {% if request.POST.marital_status == 'single' %}selected{% endif %}>Single</option>
+          <option value="married" {% if request.POST.marital_status == 'married' %}selected{% endif %}>Married</option>
+          <option value="divorced" {% if request.POST.marital_status == 'divorced' %}selected{% endif %}>Divorced</option>
+          <option value="widowed" {% if request.POST.marital_status == 'widowed' %}selected{% endif %}>Widowed</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Number of Dependents</label>
+        <input type="number" name="number_of_dependents" value="{{ request.POST.number_of_dependents|default:'0' }}" min="0">
+      </div>
+      <div class="form-group">
+        <label>Personal Photo</label>
+        <input type="file" name="personal_photo" accept="image/*">
+      </div>
+      <div class="form-group">
+        <label>Passport Number</label>
+        <input type="text" name="passport_number" placeholder="Passport number" value="{{ request.POST.passport_number|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Passport Expiry Date</label>
+        <input type="date" name="passport_expiry" value="{{ request.POST.passport_expiry|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>ZKTeco Device UID</label>
+        <input type="text" name="zkteco_uid" placeholder="Numeric ID from attendance device" value="{{ request.POST.zkteco_uid|default:'' }}">
+        <small style="color:var(--text3);font-size:11px;">The number shown in ZKTeco device logs for this employee</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───── CONTACT ───── -->
+  <div class="card tab-panel" id="panel-contact" style="display:none;">
+    <div style="font-size:14px;font-weight:600;color:var(--accent2);margin-bottom:20px;display:flex;align-items:center;gap:8px;">
+      <i class="fa-solid fa-address-book"></i> Contact Information
+    </div>
+    <div class="grid-3">
+      <div class="form-group">
+        <label>Mobile Number</label>
+        <input type="text" name="mobile_number" placeholder="Mobile number" value="{{ request.POST.mobile_number|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Alternative Mobile (Optional)</label>
+        <input type="text" name="alt_mobile_number" placeholder="Alternative mobile" value="{{ request.POST.alt_mobile_number|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" name="email" placeholder="Email address" value="{{ request.POST.email|default:'' }}">
+      </div>
+      <div class="form-group" style="grid-column:span 3;">
+        <label>Current Address</label>
+        <textarea name="current_address" rows="2" placeholder="Current address">{{ request.POST.current_address|default:'' }}</textarea>
+      </div>
+      <div class="form-group">
+        <label>City</label>
+        <input type="text" name="city" placeholder="City" value="{{ request.POST.city|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Country</label>
+        <input type="text" name="country" placeholder="Country" value="{{ request.POST.country|default:'' }}">
+      </div>
+    </div>
+    <div style="font-size:14px;font-weight:600;color:var(--accent3);margin:20px 0 16px;display:flex;align-items:center;gap:8px;">
+      <i class="fa-solid fa-phone-volume"></i> Emergency Contact
+    </div>
+    <div class="grid-3">
+      <div class="form-group">
+        <label>Emergency Contact Name</label>
+        <input type="text" name="emergency_contact_name" placeholder="Name" value="{{ request.POST.emergency_contact_name|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Relationship</label>
+        <input type="text" name="emergency_relationship" placeholder="e.g. Spouse, Father" value="{{ request.POST.emergency_relationship|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Contact Number</label>
+        <input type="text" name="emergency_contact_number" placeholder="Phone number" value="{{ request.POST.emergency_contact_number|default:'' }}">
+      </div>
+    </div>
+  </div>
+
+  <!-- ───── WORK & SCHEDULE ───── -->
+  <div class="card tab-panel" id="panel-work" style="display:none;">
+    <div style="font-size:14px;font-weight:600;color:var(--accent2);margin-bottom:20px;display:flex;align-items:center;gap:8px;">
+      <i class="fa-solid fa-briefcase"></i> Job Information
+    </div>
+    <div class="grid-3">
+      <div class="form-group">
+        <label>Employee ID</label>
+        <input type="text" name="employee_id" placeholder="Employee ID" value="{{ request.POST.employee_id|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Job Title</label>
+        <input type="text" name="job_title" placeholder="Job title" value="{{ request.POST.job_title|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Department</label>
+        <select name="department">
+          <option value="">Select Department</option>
+          {% for dept in departments %}
+          <option value="{{ dept.id }}" {% if request.POST.department == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Branch</label>
+        <input type="text" name="branch" placeholder="Branch name" value="{{ request.POST.branch|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Hiring Date</label>
+        <input type="date" name="hiring_date" value="{{ request.POST.hiring_date|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Contract Type</label>
+        <select name="contract_type">
+          <option value="">Select</option>
+          <option value="full_time" {% if request.POST.contract_type == 'full_time' %}selected{% endif %}>Full-time</option>
+          <option value="part_time" {% if request.POST.contract_type == 'part_time' %}selected{% endif %}>Part-time</option>
+          <option value="temporary" {% if request.POST.contract_type == 'temporary' %}selected{% endif %}>Temporary</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Contract Duration</label>
+        <input type="text" name="contract_duration" placeholder="e.g. 1 Year" value="{{ request.POST.contract_duration|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Contract Start Date</label>
+        <input type="date" name="contract_start" value="{{ request.POST.contract_start|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Contract End Date</label>
+        <input type="date" name="contract_end" value="{{ request.POST.contract_end|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Probation Period (Days)</label>
+        <input type="number" name="probation_period" value="{{ request.POST.probation_period|default:'90' }}">
+      </div>
+      <div class="form-group">
+        <label>Direct Manager</label>
+        <select name="direct_manager">
+          <option value="">Select Manager</option>
+          {% for mgr in managers %}
+          <option value="{{ mgr.id }}" {% if request.POST.direct_manager == mgr.id|stringformat:"s" %}selected{% endif %}>{{ mgr.full_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+  <label>Advance Salary Role</label>
+  {{ forms.work.advance_role }}
+</div>
+      <div class="form-group">
+        <label>Work Location</label>
+        <select name="work_location">
+          <option value="">Select</option>
+          <option value="office" {% if request.POST.work_location == 'office' %}selected{% endif %}>Office</option>
+          <option value="branch" {% if request.POST.work_location == 'branch' %}selected{% endif %}>Branch</option>
+          <option value="warehouse" {% if request.POST.work_location == 'warehouse' %}selected{% endif %}>Warehouse</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Employment Status</label>
+        <select name="employment_status">
+          <option value="active" {% if request.POST.employment_status == 'active' or not request.POST.employment_status %}selected{% endif %}>Active</option>
+          <option value="suspended" {% if request.POST.employment_status == 'suspended' %}selected{% endif %}>Suspended</option>
+          <option value="terminated" {% if request.POST.employment_status == 'terminated' %}selected{% endif %}>Terminated</option>
+        </select>
+      </div>
+      <div class="form-group" style="grid-column:span 3;">
+        <label>Reason for Termination (if any)</label>
+        <textarea name="reason_for_termination" rows="2" placeholder="If applicable">{{ request.POST.reason_for_termination|default:'' }}</textarea>
+      </div>
+    </div>
+
+    <div style="font-size:14px;font-weight:600;color:var(--accent3);margin:20px 0 16px;display:flex;align-items:center;gap:8px;">
+      <i class="fa-solid fa-calendar-check"></i> Work Schedule
+    </div>
+    <div class="grid-3">
+      <div class="form-group">
+        <label>Working Days</label>
+        <input type="text" name="working_days" placeholder="e.g. Sun-Thu" value="{{ request.POST.working_days|default:'Sunday-Thursday' }}">
+      </div>
+      <div class="form-group">
+        <label>Working Hours / Day</label>
+        <input type="number" name="working_hours" value="{{ request.POST.working_hours|default:'8' }}" step="0.5">
+      </div>
+      <div class="form-group">
+        <label>Work System</label>
+        <select name="work_system">
+          <option value="fixed" {% if request.POST.work_system != 'shifts' %}selected{% endif %}>Fixed</option>
+          <option value="shifts" {% if request.POST.work_system == 'shifts' %}selected{% endif %}>Shifts</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Work Start Time</label>
+        <input type="time" name="work_start_time" value="{{ request.POST.work_start_time|default:'09:00' }}">
+      </div>
+      <div class="form-group">
+        <label>Work End Time</label>
+        <input type="time" name="work_end_time" value="{{ request.POST.work_end_time|default:'18:00' }}">
+      </div>
+      <div class="form-group">
+        <label>Lunch Break (Minutes)</label>
+        <input type="number" name="lunch_break_minutes" value="{{ request.POST.lunch_break_minutes|default:'60' }}">
+      </div>
+      <div class="form-group">
+        <label>Weekly Off Days</label>
+        <input type="text" name="weekly_off_days" placeholder="e.g. Friday,Saturday" value="{{ request.POST.weekly_off_days|default:'Friday,Saturday' }}">
+      </div>
+      <div class="form-group" style="grid-column:span 2;">
+        <label>Job Description</label>
+        <textarea name="job_description" rows="3" placeholder="Job description and responsibilities">{{ request.POST.job_description|default:'' }}</textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───── FINANCIAL ───── -->
+  <div class="card tab-panel" id="panel-financial" style="display:none;">
+    <div style="font-size:14px;font-weight:600;color:var(--accent2);margin-bottom:20px;display:flex;align-items:center;gap:8px;">
+      <i class="fa-solid fa-file-shield"></i> Official Information
+    </div>
+    <div class="grid-3">
+      <div class="form-group">
+        <label>Social Insurance Number</label>
+        <input type="text" name="social_insurance_number" placeholder="GOSI number" value="{{ request.POST.social_insurance_number|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Bank Account (IBAN)</label>
+        <input type="text" name="bank_account_iban" placeholder="IBAN" value="{{ request.POST.bank_account_iban|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Bank Name</label>
+        <input type="text" name="bank_name" placeholder="Bank name" value="{{ request.POST.bank_name|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Iqama / ID Expiry Date</label>
+        <input type="date" name="iqama_expiry_date" value="{{ request.POST.iqama_expiry_date|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Profession (per Iqama)</label>
+        <input type="text" name="profession_per_iqama" placeholder="Profession as per Iqama" value="{{ request.POST.profession_per_iqama|default:'' }}">
+      </div>
+    </div>
+
+    <div style="font-size:14px;font-weight:600;color:var(--success);margin:20px 0 16px;display:flex;align-items:center;gap:8px;">
+      <i class="fa-solid fa-money-bill-wave"></i> Salary & Compensation
+    </div>
+    <div class="grid-3">
+      <div class="form-group">
+        <label>Basic Salary (SAR)</label>
+        <input type="number" name="basic_salary" value="{{ request.POST.basic_salary|default:'0' }}" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Housing Allowance (SAR)</label>
+        <input type="number" name="housing_allowance" value="{{ request.POST.housing_allowance|default:'0' }}" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Proficiency Allowance (SAR)</label>
+        <input type="number" name="proficiency_allowance" value="{{ request.POST.proficiency_allowance|default:'0' }}" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Other Allowances (SAR)</label>
+        <input type="number" name="other_allowances" value="{{ request.POST.other_allowances|default:'0' }}" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Salary Payment Method</label>
+        <select name="salary_payment_method">
+          <option value="bank" {% if request.POST.salary_payment_method != 'cash' %}selected{% endif %}>Bank Transfer</option>
+          <option value="cash" {% if request.POST.salary_payment_method == 'cash' %}selected{% endif %}>Cash</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Salary Payment Day</label>
+        <input type="number" name="salary_payment_date" value="{{ request.POST.salary_payment_date|default:'1' }}" min="1" max="31">
+      </div>
+    </div>
+  </div>
+
+  <!-- ───── DOCUMENTS ───── -->
+  <div class="card tab-panel" id="panel-documents" style="display:none;">
+    <div style="font-size:14px;font-weight:600;color:var(--accent2);margin-bottom:20px;display:flex;align-items:center;gap:8px;">
+      <i class="fa-solid fa-folder-open"></i> Employee Documents
+    </div>
+    <div class="grid-3">
+      <div class="form-group">
+        <label>Iqama Copy</label>
+        <input type="file" name="doc_iqama" accept=".pdf,image/*">
+      </div>
+      <div class="form-group">
+        <label>Passport Copy</label>
+        <input type="file" name="doc_passport" accept=".pdf,image/*">
+      </div>
+      <div class="form-group">
+        <label>Contract Copy</label>
+        <input type="file" name="doc_contract" accept=".pdf,image/*">
+      </div>
+      <div class="form-group">
+        <label>CV / Resume</label>
+        <input type="file" name="doc_cv" accept=".pdf,.doc,.docx">
+      </div>
+      <div class="form-group">
+        <label>Medical Certificate</label>
+        <input type="file" name="doc_medical" accept=".pdf,image/*">
+      </div>
+      <div class="form-group">
+        <label>Other Document</label>
+        <input type="file" name="doc_other" accept=".pdf,image/*,.doc,.docx">
+      </div>
+    </div>
+  </div>
+
+  <!-- Submit bar — always visible -->
+  <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;padding:16px 20px;background:var(--card);border-radius:16px;border:1px solid var(--border);">
+    <a href="{% url 'employee_list' %}" class="btn btn-secondary">Cancel</a>
+    <button type="button" class="btn btn-secondary" id="btn-prev" style="display:none;">← Previous</button>
+    <button type="button" class="btn btn-secondary" id="btn-next">Next →</button>
+    <button type="submit" class="btn btn-primary" id="btn-submit" style="display:none;">
+      <i class="fa-solid fa-user-plus"></i> Create Employee
+    </button>
+  </div>
+
+</form>
+
+<script>
+  const tabs = ['basic', 'contact', 'work', 'financial', 'documents'];
+  let current = 0;
+
+  const tabBtns   = document.querySelectorAll('.tab-btn');
+  const panels    = document.querySelectorAll('.tab-panel');
+  const btnPrev   = document.getElementById('btn-prev');
+  const btnNext   = document.getElementById('btn-next');
+  const btnSubmit = document.getElementById('btn-submit');
+
+  function showTab(index) {
+    tabs.forEach((t, i) => {
+      panels[i].style.display  = i === index ? '' : 'none';
+      tabBtns[i].classList.toggle('active', i === index);
+    });
+    current = index;
+    btnPrev.style.display   = index === 0 ? 'none' : '';
+    btnNext.style.display   = index === tabs.length - 1 ? 'none' : '';
+    btnSubmit.style.display = index === tabs.length - 1 ? '' : 'none';
+  }
+
+  // Tab button clicks
+  tabBtns.forEach((btn, i) => {
+    btn.addEventListener('click', e => { e.preventDefault(); showTab(i); });
+  });
+
+  btnNext.addEventListener('click', () => { if (current < tabs.length - 1) showTab(current + 1); });
+  btnPrev.addEventListener('click', () => { if (current > 0) showTab(current - 1); });
+
+  // Init
+  showTab(0);
+</script>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% block title %}Review Advance Request{% endblock %}
+{% block page_title %}Review Advance Request{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Review Advance Request</div>
+  </div>
+  <a href="{% url 'advance_salary_list' %}" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i> Back</a>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:900px;">
+  <!-- Request Details -->
+  <div class="card">
+    <div style="font-size:15px;font-weight:600;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid var(--accent);display:inline-block;">
+      Request Details
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px;">
+      <div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">Employee</div>
+        <div style="font-weight:600;">{{ advance.employee.full_name }}</div>
+        <div style="font-size:12px;color:var(--text3);">{{ advance.employee.job_title|default:"—" }} • {{ advance.employee.department.name|default:"—" }}</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">Requested Amount</div>
+        <div style="font-weight:700;font-size:20px;color:var(--accent);">{{ advance.amount|floatformat:2 }} SAR</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">Basic Salary</div>
+        <div style="font-weight:600;">{{ advance.employee.basic_salary|floatformat:2 }} SAR</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">Total Salary</div>
+        <div style="font-weight:600;">{{ advance.employee.total_salary|floatformat:2 }} SAR</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">Repayment Month</div>
+        <div>{{ advance.repayment_month|default:"—" }}</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">Reason</div>
+        <div>{{ advance.reason|default:"—" }}</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">Requested On</div>
+        <div>{{ advance.requested_date|date:"Y-m-d" }}</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">Current Status</div>
+        <span class="badge badge-{% if advance.status == 'approved' %}success{% elif advance.status == 'pending' %}warning{% elif advance.status == 'paid' %}info{% else %}danger{% endif %}">
+          {{ advance.get_status_display }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Review Actions -->
+  <div class="card">
+  <div style="font-size:15px;font-weight:600;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid var(--accent);display:inline-block;">
+    Review Action
+  </div>
+
+  {% if can_approve or can_refuse %}
+  <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+
+    {% if can_approve %}
+    <form method="post" action="{% url 'advance_salary_approve' advance.pk %}">
+      {% csrf_token %}
+      <button class="btn btn-primary" style="width:100%;">
+        <i class="fa-solid fa-check"></i>
+        {% if advance.approval_state == 'ceo_approved' %}Mark as Paid{% else %}Approve & Forward{% endif %}
+      </button>
+    </form>
+    {% endif %}
+
+    {% if can_refuse %}
+    <form method="post" action="{% url 'advance_salary_refuse' advance.pk %}"
+      onsubmit="return confirm('Reject this request?')">
+      {% csrf_token %}
+      <input type="hidden" name="reason" value="">
+      <button class="btn btn-sm" style="width:100%;background:var(--danger-soft);color:var(--danger);">
+        <i class="fa-solid fa-times"></i> Reject Request
+      </button>
+    </form>
+    {% endif %}
+
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:20px;color:var(--text3);">
+    {% if advance.approval_state == 'paid' %}
+      This request has been paid.
+    {% elif advance.approval_state == 'rejected' %}
+      This request has been rejected.
+    {% else %}
+      No action required from you at this stage.
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- HR Notes — editable only for HR -->
+  {% if request.user.role == "hr" %}
+  <form method="post" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+    {% csrf_token %}
+    <div class="form-group">
+      <label>HR Notes</label>
+      <textarea name="hr_notes" rows="3" class="form-control">{{ advance.hr_notes }}</textarea>
+    </div>
+    <button type="submit" class="btn btn-secondary btn-sm">Save Notes</button>
+  </form>
+  {% elif advance.hr_notes %}
+  <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);font-size:13px;">
+    <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">HR Notes</div>
+    {{ advance.hr_notes }}
+  </div>
+  {% endif %}
+
+  {% if advance.reviewed_by %}
+  <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);font-size:12px;color:var(--text3);">
+    Last reviewed by {{ advance.reviewed_by.full_name }} on {{ advance.reviewed_at|date:"Y-m-d H:i" }}
+  </div>
+  {% endif %}
+</div>
+</div>
+{% endblock %}

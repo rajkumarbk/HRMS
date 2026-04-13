@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Add Device{% endblock %}
+{% block page_title %}Attendance{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Add ZKTeco Device</div>
+    <div class="page-subtitle">Connect a biometric device to the system</div>
+  </div>
+  <a href="{% url 'attendance_list' %}" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i> Back</a>
+</div>
+
+<div>
+  <div class="card animate-fade-up">
+    <div style="font-size:14px;font-weight:600;color:var(--accent2);margin-bottom:20px;display:flex;align-items:center;gap:8px;">
+      <i class="fa-solid fa-microchip"></i> Device Connection Details
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label>Device Label</label>
+        <input type="text" name="name" class="form-control" placeholder="e.g. Main Entrance" value="{{ form.name.value|default:'' }}" required>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label>IP Address</label>
+          <input type="text" name="ip_address" class="form-control" placeholder="e.g. 192.168.1.100" value="{{ form.ip_address.value|default:'' }}" required>
+        </div>
+        <div class="form-group">
+          <label>Port</label>
+          <input type="number" name="port" class="form-control" value="{{ form.port.value|default:'4370' }}" required>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Device Password</label>
+          <input type="number" name="password" class="form-control" value="{{ form.password.value|default:'0' }}">
+          <small style="color:var(--text3);font-size:11px;">Leave 0 if no password set</small>
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" name="location" class="form-control" placeholder="e.g. Head Office" value="{{ form.location.value|default:'' }}">
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px;padding-top:20px;border-top:1px solid var(--border);">
+        <a href="{% url 'attendance_list' %}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plug"></i> Connect & Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

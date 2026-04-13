@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}Employees{% endblock %}
+{% block page_title %}Employee Information{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Employees</div>
+    <div class="page-subtitle">{{ employees.count }} total records</div>
+  </div>
+  <a href="{% url 'employee_create' %}" class="btn btn-primary">
+    <i class="fa-solid fa-user-plus"></i> Add Employee
+  </a>
+</div>
+
+<!-- Filters -->
+<div class="card" style="margin-bottom:20px;">
+  <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+    <div style="flex:1;min-width:200px;">
+      <div class="search-bar">
+        <i class="fa-solid fa-search search-icon"></i>
+        <input type="text" name="q" value="{{ q }}" placeholder="Search by name, iqama, job title...">
+      </div>
+    </div>
+    <div style="min-width:180px;">
+      <select name="dept">
+        <option value="">All Departments</option>
+        {% for dept in departments %}
+        <option value="{{ dept.id }}" {% if selected_dept == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filter</button>
+    {% if q or selected_dept %}<a href="{% url 'employee_list' %}" class="btn btn-secondary">Clear</a>{% endif %}
+  </form>
+</div>
+
+<!-- Employee Table -->
+<div class="table-wrapper animate-fade-up">
+  <table>
+    <thead>
+      <tr>
+        <th>Employee</th>
+        <th>Iqama / ID</th>
+        <th>Job Title</th>
+        <th>Department</th>
+        <th>Work Location</th>
+        <th>Status</th>
+        <th>Joined</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for emp in employees %}
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="emp-avatar">
+              {% if emp.personal_photo %}<img src="{{ emp.personal_photo.url }}" alt="">{% else %}{{ emp.full_name|first|upper }}{% endif %}
+            </div>
+            <div>
+              <div style="font-weight:600;font-size:13.5px;">{{ emp.full_name }}</div>
+              <div style="font-size:12px;color:var(--text3);">{{ emp.email|default:emp.mobile_number|default:"—" }}</div>
+            </div>
+          </div>
+        </td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:13px;">{{ emp.iqama_number }}</td>
+        <td>{{ emp.job_title|default:"—" }}</td>
+        <td>{{ emp.department.name|default:"—" }}</td>
+        <td>{{ emp.get_work_location_display|default:"—" }}</td>
+        <td>
+          <span class="badge badge-{% if emp.employment_status == 'active' %}success{% elif emp.employment_status == 'suspended' %}warning{% else %}danger{% endif %}">
+            <span class="status-dot {% if emp.employment_status == 'active' %}online{% else %}offline{% endif %}"></span>
+            {{ emp.get_employment_status_display }}
+          </span>
+        </td>
+        <td style="color:var(--text3);font-size:12px;">{{ emp.hiring_date|date:"M d, Y"|default:"—" }}</td>
+        <td>
+          <a href="{% url 'employee_detail' emp.pk %}" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-eye"></i>
+          </a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="8" style="text-align:center;padding:50px;color:var(--text3);">
+          <div style="font-size:40px;margin-bottom:12px;">👥</div>
+          <div>No employees found</div>
+          {% if q %}<div style="font-size:12px;margin-top:8px;">Try adjusting your search</div>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
