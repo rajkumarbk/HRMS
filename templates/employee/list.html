@@ -52,7 +52,7 @@
     </thead>
     <tbody>
       {% for emp in employees %}
-      <tr>
+      <tr onclick="window.location='{% url 'employee_detail' emp.pk %}'" style="cursor:pointer;">
         <td>
           <div style="display:flex;align-items:center;gap:10px;">
             <div class="emp-avatar">
@@ -75,11 +75,11 @@
           </span>
         </td>
         <td style="color:var(--text3);font-size:12px;">{{ emp.hiring_date|date:"M d, Y"|default:"—" }}</td>
-        <td>
+        <!-- <td>
           <a href="{% url 'employee_detail' emp.pk %}" class="btn btn-secondary btn-sm">
             <i class="fa-solid fa-eye"></i>
           </a>
-        </td>
+        </td> -->
       </tr>
       {% empty %}
       <tr>

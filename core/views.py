@@ -3,6 +3,7 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
+from collections import defaultdict
 from django.db.models import Q
 from .models import (
     Employee,
@@ -192,8 +193,6 @@ def device_add(request):
 @login_required
 @hr_required
 def device_detail(request, pk):
-    from .models import ZKAttendanceLog
-
     device = get_object_or_404(ZKTecoDevice, pk=pk)
 
     if request.GET.get("refresh"):
@@ -226,7 +225,8 @@ def device_detail(request, pk):
                 device.save()
                 messages.error(request, "Could not reach device.")
 
-    logs_qs = device.logs.all()
+ 
+    logs_qs = device.logs.all().order_by("punch_time")
     search_name = request.GET.get("name", "").strip()
     search_date_from = request.GET.get("date_from", "").strip()
     search_date_to = request.GET.get("date_to", "").strip()
@@ -238,21 +238,48 @@ def device_detail(request, pk):
     if search_date_to:
         logs_qs = logs_qs.filter(punch_time__date__lte=search_date_to)
 
-    paginator = Paginator(logs_qs, 50)
+    # Group by (user_id, date) → one row per employee per day
+    grouped = defaultdict(lambda: {
+        "check_in": None, "check_out": None,
+        "other_punches": [], "employee_name": "", "user_id": "",
+    })
+    for log in logs_qs:
+        local_time = timezone.localtime(log.punch_time)
+        key = (log.user_id, local_time.date())
+        entry = grouped[key]
+        entry["user_id"] = log.user_id
+        entry["employee_name"] = log.employee_name or entry["employee_name"]
+        entry["date"] = local_time.date()
+        if log.punch_type == "0":  # Check In → keep earliest
+            if entry["check_in"] is None or local_time < entry["check_in"]:
+                entry["check_in"] = local_time
+        elif log.punch_type == "1":  # Check Out → keep latest
+            if entry["check_out"] is None or local_time > entry["check_out"]:
+                entry["check_out"] = local_time
+        else:
+            entry["other_punches"].append({"time": local_time, "type": log.punch_type})
+
+    # Sort: most recent date first, then by employee name
+    rows = sorted(
+        grouped.values(),
+        key=lambda r: (
+            -r["date"].toordinal(),
+            -(r["check_in"].timestamp() if r["check_in"] else 0)
+        )
+    )
+
+    total_logs = len(rows)
+    paginator = Paginator(rows, 50)
     page_obj = paginator.get_page(request.GET.get("page"))
 
-    return render(
-        request,
-        "attendance/device_detail.html",
-        {
-            "device": device,
-            "page_obj": page_obj,
-            "search_name": search_name,
-            "search_date_from": search_date_from,
-            "search_date_to": search_date_to,
-            "total_logs": logs_qs.count(),
-        },
-    )
+    return render(request, "attendance/device_detail.html", {
+        "device": device,
+        "page_obj": page_obj,
+        "search_name": search_name,
+        "search_date_from": search_date_from,
+        "search_date_to": search_date_to,
+        "total_logs": total_logs,
+    })
 
 
 @login_required
@@ -803,47 +830,40 @@ def timeoff_list(request):
     role = user.role
 
     if role == "hr":
-        # HR sees everything
-        requests_qs = TimeOffRequest.objects.all().select_related(
-            "employee", "leave_type"
-        ).order_by("-created_at")
-
+        requests_qs = TimeOffRequest.objects.all().select_related("employee", "leave_type").order_by("-created_at")
     elif role == "branch_manager":
-        # Only sees: submitted employee requests (their turn to approve)
-        # + their own requests
         requests_qs = TimeOffRequest.objects.filter(
-            Q(employee=user) |
-            Q(approval_state="submitted", requester_role="employee")
+            Q(employee=user) | Q(approval_state="submitted", requester_role="employee")
         ).select_related("employee", "leave_type").order_by("-created_at").distinct()
-
     elif role == "manager":
-        # Sees:
-        #   - own requests
-        #   - employee requests at branch_approved (their turn)
-        #   - branch_manager requests at submitted (their turn)
-        #   - officer requests at submitted where they are the direct_manager
         requests_qs = TimeOffRequest.objects.filter(
             Q(employee=user) |
             Q(approval_state="branch_approved", requester_role="employee") |
             Q(approval_state="submitted", requester_role="branch_manager") |
             Q(approval_state="submitted", requester_role="officer", employee__direct_manager=user)
         ).select_related("employee", "leave_type").order_by("-created_at").distinct()
-
     elif role == "ceo":
-        # Only sees: manager/hr requests at submitted (their turn)
-        # + their own requests
         requests_qs = TimeOffRequest.objects.filter(
-            Q(employee=user) |
-            Q(approval_state="submitted", requester_role__in=["manager", "hr"])
+            Q(employee=user) | Q(approval_state="submitted", requester_role__in=["manager", "hr"])
         ).select_related("employee", "leave_type").order_by("-created_at").distinct()
-
     else:
-        # Regular employee / officer — only their own requests
-        requests_qs = TimeOffRequest.objects.filter(
-            employee=user
-        ).select_related("leave_type").order_by("-created_at")
+        requests_qs = TimeOffRequest.objects.filter(employee=user).select_related("leave_type").order_by("-created_at")
 
-    # Annotate approve/refuse flags
+    # ── Filters ──
+    q = request.GET.get("q", "").strip()
+    date_from = request.GET.get("date_from", "").strip()
+    date_to = request.GET.get("date_to", "").strip()
+    leave_type_id = request.GET.get("leave_type", "").strip()
+
+    if q:
+        requests_qs = requests_qs.filter(employee__full_name__icontains=q)
+    if date_from:
+        requests_qs = requests_qs.filter(date_from__gte=date_from)
+    if date_to:
+        requests_qs = requests_qs.filter(date_to__lte=date_to)
+    if leave_type_id:
+        requests_qs = requests_qs.filter(leave_type__id=leave_type_id)
+
     for req in requests_qs:
         req.user_can_approve = _can_approve(user, req)
         req.user_can_refuse = _can_refuse(user, req)
@@ -856,8 +876,12 @@ def timeoff_list(request):
     return render(request, "timeoff/list.html", {
         "requests": requests_qs,
         "leave_types": leave_types,
-        # "pending_count": pending_count,
+        "pending_count": pending_count,
         "user_role": role,
+        "q": q,
+        "date_from": date_from,
+        "date_to": date_to,
+        "leave_type_id": leave_type_id,
     })
 
 
@@ -1111,22 +1135,29 @@ def discuss(request):
 
     # --- USER ACCOUNT VIEWS ---
 
-
 @login_required
 @hr_required
 def user_accounts(request):
     employees = Employee.objects.all().order_by("-date_joined")
-    # Get employees without accounts (those who can have accounts created)
+
+    q = request.GET.get("q", "").strip()
+    role_filter = request.GET.get("role", "").strip()
+
+    if q:
+        employees = employees.filter(
+            Q(full_name__icontains=q) | Q(iqama_number__icontains=q)
+        )
+    if role_filter:
+        employees = employees.filter(role=role_filter)
+
     employees_without_account = Employee.objects.filter(is_active=True)
 
-    return render(
-        request,
-        "user_accounts.html",
-        {
-            "employees": employees,
-            "employees_without_account": employees_without_account,
-        },
-    )
+    return render(request, "user_accounts.html", {
+        "employees": employees,
+        "employees_without_account": employees_without_account,
+        "q": q,
+        "role_filter": role_filter,
+    })
 
 
 @login_required
@@ -1245,14 +1276,30 @@ def change_user_role(request, pk, role):
 
 # --- ASSET MANAGEMENT VIEWS ---
 @login_required
+@hr_required
 def asset_handover_list(request):
-    # Assets currently handed over (assigned AND NOT returned)
+    search_query = request.GET.get("search", "").strip()
+    custody_filter = request.GET.get("custody_type", "").strip()
+
     handover_assets = Asset.objects.filter(
         is_returned=False, assigned_to__isnull=False
-    ).order_by("-assigned_date")
+    )
+    if search_query:
+        handover_assets = handover_assets.filter(
+            assigned_to__full_name__icontains=search_query
+        )
+    if custody_filter:
+        handover_assets = handover_assets.filter(custody_type=custody_filter)
+    handover_assets = handover_assets.order_by("-assigned_date")
 
-    # Returned assets history (is_returned = True)
-    returned_assets = Asset.objects.filter(is_returned=True).order_by("-returned_date")
+    returned_assets = Asset.objects.filter(is_returned=True)
+    if search_query:
+        returned_assets = returned_assets.filter(
+            assigned_to__full_name__icontains=search_query
+        )
+    if custody_filter:
+        returned_assets = returned_assets.filter(custody_type=custody_filter)
+    returned_assets = returned_assets.order_by("-returned_date")
 
     employees = Employee.objects.filter(is_active=True)
 
@@ -1263,6 +1310,8 @@ def asset_handover_list(request):
             "handover_assets": handover_assets,
             "returned_assets": returned_assets,
             "employees": employees,
+            "search_query": search_query,
+            "custody_filter": custody_filter,
         },
     )
 
@@ -1611,9 +1660,14 @@ def advance_salary_list(request):
     if status_filter:
         qs = qs.filter(status=status_filter)
 
+    search_name = request.GET.get("name", "").strip()
+    if search_name:
+        qs = qs.filter(employee__full_name__icontains=search_name)
+
     return render(request, "advance_salary/list.html", {
     "advances": qs,
     "status_filter": status_filter,
+    "search_name": search_name,
     })
 
 
@@ -1626,6 +1680,8 @@ def advance_salary_create(request):
         obj.requester_role = _get_advance_requester_role(request.user)
         obj.approval_state = "submitted"
         obj.status = "pending"
+        if request.FILES.get("supporting_document"):
+            obj.supporting_document = request.FILES["supporting_document"]
         obj.save()
         messages.success(request, "Advance salary request submitted successfully.")
         return redirect("advance_salary_list")

@@ -24,6 +24,47 @@
 </div> -->
 
 <!-- Tab 1: Handover (Issued Assets) -->
+ <div class="card" style="margin-bottom:20px;">
+  <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+
+    <!-- Search -->
+    <div style="flex:1;min-width:200px;">
+      <div class="search-bar">
+        <i class="fa-solid fa-search search-icon"></i>
+        <input
+          type="text"
+          name="search"
+          value="{{ search_query }}"
+          placeholder="Search by employee name..."
+        >
+      </div>
+    </div>
+
+    <!-- Asset Type -->
+    <div style="min-width:180px;">
+      <select name="custody_type">
+        <option value="">All Asset Types</option>
+        <option value="office_equipment" {% if custody_filter == "office_equipment" %}selected{% endif %}>Office Equipment</option>
+        <option value="vehicle" {% if custody_filter == "vehicle" %}selected{% endif %}>Vehicle</option>
+        <option value="it_equipment" {% if custody_filter == "it_equipment" %}selected{% endif %}>IT / Technical Equipment</option>
+        <option value="cash" {% if custody_filter == "cash" %}selected{% endif %}>Cash</option>
+        <option value="documents" {% if custody_filter == "documents" %}selected{% endif %}>Documents / Records</option>
+        <option value="tools" {% if custody_filter == "tools" %}selected{% endif %}>Tools / Equipment</option>
+        <option value="other" {% if custody_filter == "other" %}selected{% endif %}>Special / Other</option>
+      </select>
+    </div>
+
+    <!-- Buttons -->
+    <button type="submit" class="btn btn-primary">
+      <i class="fa-solid fa-filter"></i> Filter
+    </button>
+
+    {% if search_query or custody_filter %}
+      <a href="{% url 'asset_handover_list' %}" class="btn btn-secondary">Clear</a>
+    {% endif %}
+
+  </form>
+</div>
 <div id="tab-handover" class="tab-content active">
   <div class="card">
     <div class="table-wrapper">
@@ -71,7 +112,7 @@
     </div>
   </div>
 </div>
-
+<br>
 <!-- Tab 2: Return (Returned Assets History) -->
 <div id="tab-return" class="tab-content">
   <div class="card">

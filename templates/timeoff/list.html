@@ -29,7 +29,51 @@
   </div>
   {% endfor %}
 </div> -->
+<!-- Search & Filter Bar -->
+<div class="card" style="margin-bottom:20px;">
+  <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
 
+    <!-- Search -->
+    <div style="flex:1;min-width:200px;">
+      <div class="search-bar">
+        <i class="fa-solid fa-search search-icon"></i>
+        <input type="text" name="q" value="{{ q }}" placeholder="Search name...">
+      </div>
+    </div>
+
+    <!-- Date From -->
+    <div style="min-width:180px;">
+      <input type="date" name="date_from" value="{{ date_from }}">
+    </div>
+
+    <!-- Date To -->
+    <div style="min-width:180px;">
+      <input type="date" name="date_to" value="{{ date_to }}">
+    </div>
+
+    <!-- Leave Type -->
+    <div style="min-width:180px;">
+      <select name="leave_type">
+        <option value="">All Types</option>
+        {% for lt in leave_types %}
+        <option value="{{ lt.id }}" {% if leave_type_id == lt.id|stringformat:"s" %}selected{% endif %}>
+          {{ lt.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Buttons -->
+    <button type="submit" class="btn btn-primary">
+      <i class="fa-solid fa-filter"></i> Filter
+    </button>
+
+    {% if q or date_from or date_to or leave_type_id %}
+      <a href="{% url 'timeoff_list' %}" class="btn btn-secondary">Clear</a>
+    {% endif %}
+
+  </form>
+</div>
 <!-- Requests Table -->
 <div class="table-wrapper animate-fade-up">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;background:var(--bg3);border-bottom:1px solid var(--border);">
@@ -38,6 +82,7 @@
       <span class="badge badge-warning">Pending: {{ pending_count }}</span>
     </div>
   </div>
+  
   <table>
     <thead>
       <tr>

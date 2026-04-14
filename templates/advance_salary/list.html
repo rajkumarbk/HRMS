@@ -15,14 +15,35 @@
   </a>
 </div>
 
-<!-- Status Filter -->
 <div class="card" style="margin-bottom:20px;">
-  <div style="display:flex;gap:8px;flex-wrap:wrap;">
-    <a href="{% url 'advance_salary_list' %}" class="btn {% if not status_filter %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">All</a>
-    <a href="?status=pending" class="btn {% if status_filter == 'pending' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Pending</a>
-    <a href="?status=approved" class="btn {% if status_filter == 'approved' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Approved</a>
-    <a href="?status=paid" class="btn {% if status_filter == 'paid' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Paid</a>
-    <a href="?status=rejected" class="btn {% if status_filter == 'rejected' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Rejected</a>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+
+    <!-- Search -->
+    <form method="get" style="flex:1;min-width:200px;display:flex;gap:8px;align-items:center;">
+      {% if status_filter %}
+        <input type="hidden" name="status" value="{{ status_filter }}">
+      {% endif %}
+      <div class="search-bar" style="flex:1;">
+        <i class="fa-solid fa-search search-icon"></i>
+        <input type="text" name="name" value="{{ search_name }}" placeholder="Search employee...">
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm">
+        <i class="fa-solid fa-filter"></i> Filter
+      </button>
+      {% if search_name %}
+        <a href="?{% if status_filter %}status={{ status_filter }}{% endif %}" class="btn btn-secondary btn-sm">Clear</a>
+      {% endif %}
+    </form>
+
+    <!-- Status Pills -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <a href="?{% if search_name %}name={{ search_name }}{% endif %}" class="btn {% if not status_filter %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">All</a>
+      <a href="?status=pending{% if search_name %}&name={{ search_name }}{% endif %}" class="btn {% if status_filter == 'pending' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Pending</a>
+      <a href="?status=approved{% if search_name %}&name={{ search_name }}{% endif %}" class="btn {% if status_filter == 'approved' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Approved</a>
+      <a href="?status=paid{% if search_name %}&name={{ search_name }}{% endif %}" class="btn {% if status_filter == 'paid' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Paid</a>
+      <a href="?status=rejected{% if search_name %}&name={{ search_name }}{% endif %}" class="btn {% if status_filter == 'rejected' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Rejected</a>
+    </div>
+
   </div>
 </div>
 
@@ -38,13 +59,14 @@
           <th>Reason</th>
           <th>Repayment Month</th>
           <th>Requested</th>
+          <th>Document</th>
           <th>Status</th>
-          <th>Actions</th>
+          <!-- <th>Actions</th> -->
         </tr>
       </thead>
       <tbody>
         {% for adv in advances %}
-        <tr>
+        <tr onclick="window.location='{% url 'advance_salary_review' adv.pk %}'" style="cursor:pointer;">
           {% if request.user.is_hr %}
           <td>
             <div style="font-weight:600;">{{ adv.employee.full_name }}</div>
@@ -52,9 +74,24 @@
           </td>
           {% endif %}
           <td style="font-weight:700;color:var(--accent);">{{ adv.amount|floatformat:2 }}</td>
+          
           <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ adv.reason|default:"—" }}</td>
           <td>{{ adv.repayment_month|default:"—" }}</td>
           <td>{{ adv.requested_date|date:"Y-m-d" }}</td>
+          <td>
+  {% if adv.supporting_document %}
+    <a href="{{ adv.supporting_document.url }}" target="_blank" onclick="event.stopPropagation();"
+      style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--accent2);">
+      {% if adv.supporting_document.name|lower|slice:"-3:" == "pdf" %}
+        <i class="fa-solid fa-file-pdf" style="color:#ef4444;"></i> PDF
+      {% else %}
+        <i class="fa-solid fa-file-image" style="color:var(--accent2);"></i> Image
+      {% endif %}
+    </a>
+  {% else %}
+    <span style="color:var(--text3);font-size:12px;">—</span>
+  {% endif %}
+</td>
           <td>
             <span class="badge badge-{% if adv.status == 'approved' %}success{% elif adv.status == 'pending' %}warning{% elif adv.status == 'paid' %}info{% else %}danger{% endif %}">
               {{ adv.get_status_display }}
@@ -81,11 +118,11 @@
   </form>
   {% endif %}
 
-  <a href="{% url 'advance_salary_review' adv.pk %}" class="btn btn-secondary btn-sm" title="View">
+  <!-- <a href="{% url 'advance_salary_review' adv.pk %}" class="btn btn-secondary btn-sm" title="View">
     <i class="fa-solid fa-eye"></i>
-  </a>
+  </a> -->
 
-  {% if request.user.role == "hr" %}
+  <!-- {% if request.user.role == "hr" %}
 <form method="post" action="{% url 'advance_salary_delete' adv.pk %}" style="display:inline;"
   onsubmit="return confirm('Delete this request?')">
   {% csrf_token %}
@@ -93,7 +130,7 @@
     <i class="fa-solid fa-trash"></i>
   </button>
 </form>
-{% endif %}
+{% endif %} -->
 
   {% if not adv.user_can_approve and not adv.user_can_refuse and not request.user.role == "hr" %}
     {% if adv.approval_state != "paid" and adv.approval_state != "rejected" %}

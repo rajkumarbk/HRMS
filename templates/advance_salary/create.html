@@ -12,7 +12,7 @@
 </div>
 
 <div class="card">
-  <form method="post">
+  <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <div class="form-group">
       <label>Amount (SAR) *</label>
@@ -21,9 +21,14 @@
     </div>
     <div class="form-group">
       <label>Repayment Month</label>
-      <input type="text" name="repayment_month" placeholder="e.g. May 2025"
+      <input type="date" name="repayment_month" placeholder="e.g. May 2025"
         value="{{ request.POST.repayment_month|default:'' }}" class="form-control">
       <small style="color:var(--text3);font-size:12px;">Which month's salary should this be deducted from?</small>
+    </div>
+    <div class="form-group">
+      <label>Supporting Document <span style="color:var(--text3);font-size:12px;"></span></label>
+      <input type="file" name="supporting_document" accept=".pdf,.jpg,.jpeg,.png" class="form-control">
+      <small style="color:var(--text3);font-size:12px;">PDF or image file</small>
     </div>
     <div class="form-group">
       <label>Reason</label>

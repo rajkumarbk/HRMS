@@ -15,22 +15,22 @@
 
 <!-- Stats -->
 <div class="grid-4" style="margin-bottom:24px;">
-  <div class="stat-card blue stagger-1">
+  <div class="stat-card blue stagger-1" onclick="window.location='{% url 'employee_list' %}'" style="cursor:pointer;">
     <div class="stat-icon blue"><i class="fa-solid fa-users" style="color:var(--accent)"></i></div>
     <div class="stat-value">{{ total_employees }}</div>
     <div class="stat-label">Active Employees</div>
   </div>
-  <div class="stat-card cyan stagger-2">
+  <div class="stat-card cyan stagger-2" onclick="window.location='{% url 'timeoff_list' %}'" style="cursor:pointer;">
     <div class="stat-icon cyan"><i class="fas fa-hourglass-half" style="color:var(--accent2)"></i></div>
     <div class="stat-value">{{ pending_leaves }}</div>
     <div class="stat-label">Pending Leaves</div>
   </div>
-  <div class="stat-card green stagger-3">
+  <div class="stat-card green stagger-3" onclick="window.location='{% url 'attendance_list' %}'" style="cursor:pointer;">
     <div class="stat-icon green"><i class="fa-solid fa-circle-check" style="color:var(--success)"></i></div>
     <div class="stat-value">{{ present_today }}</div>
     <div class="stat-label">Present Today</div>
   </div>
-  <div class="stat-card purple stagger-4">
+  <div class="stat-card purple stagger-4" onclick="window.location='{% url 'discuss' %}'" style="cursor:pointer;">
     <div class="stat-icon purple"><i class="fa-solid fa-comment-dots" style="color:var(--accent3)"></i></div>
     <div class="stat-value">{{ unread_messages }}</div>
     <div class="stat-label">Unread Messages</div>

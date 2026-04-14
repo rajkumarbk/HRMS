@@ -9,7 +9,10 @@
     <div class="page-subtitle">{{ device.ip_address }}:{{ device.port }} — {{ device.location|default:"No location" }}</div>
   </div>
   <div style="display:flex;gap:8px;">
-    <a href="?refresh=1" class="btn btn-secondary"><i class="fa-solid fa-rotate"></i> Refresh</a>
+    <!-- <a href="?refresh=1" class="btn btn-secondary"><i class="fa-solid fa-rotate"></i> Refresh</a> -->
+     <a href="{% url 'device_sync' device.pk %}" class="btn btn-success">
+      <i class="fa-solid fa-download"></i> Sync Attendance
+    </a>
     <a href="{% url 'attendance_list' %}" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i> Back</a>
   </div>
 </div>
@@ -31,7 +34,7 @@
 </div>
 
 <!-- Device Info -->
-<div class="card animate-fade-up" style="margin-bottom:20px;">
+<!-- <div class="card animate-fade-up" style="margin-bottom:20px;">
   <div style="font-size:14px;font-weight:600;color:var(--accent2);margin-bottom:20px;display:flex;align-items:center;gap:8px;">
     <i class="fa-solid fa-microchip"></i> Device Information
   </div>
@@ -66,32 +69,52 @@
       <i class="fa-solid fa-download"></i> Sync Attendance
     </a>
   </div>
+</div> -->
+
+<div class="card" style="margin-bottom:20px;">
+  <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+
+    <!-- Search -->
+    <div style="flex:1;min-width:200px;">
+      <div class="search-bar">
+        <i class="fa-solid fa-search search-icon"></i>
+        <input 
+          type="text" 
+          name="name" 
+          value="{{ search_name }}" 
+          placeholder="Search employee..."
+        >
+      </div>
+    </div>
+
+    <!-- Date From -->
+    <div style="min-width:180px;">
+      <input type="date" name="date_from" value="{{ search_date_from }}">
+    </div>
+
+    <!-- Date To -->
+    <div style="min-width:180px;">
+      <input type="date" name="date_to" value="{{ search_date_to }}">
+    </div>
+
+    <!-- Buttons -->
+<div style="display:flex;gap:8px;">
+  <button type="submit" class="btn btn-primary">
+    <i class="fa-solid fa-filter"></i> Filter
+  </button>
+
+  {% if search_name or search_date_from or search_date_to %}
+    <a href="{% url 'device_detail' device.pk %}" class="btn btn-secondary">
+      Clear
+    </a>
+  {% endif %}
 </div>
 
-<!-- Filters -->
-<div class="card" style="margin-bottom:20px;">
-  <div style="font-size:14px;font-weight:600;color:var(--accent2);margin-bottom:16px;display:flex;align-items:center;gap:8px;">
-    <i class="fa-solid fa-filter"></i> Search & Filter
-  </div>
-  <form method="get" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
-    <div class="form-group" style="margin-bottom:0;">
-      <label>Employee Name</label>
-      <input type="text" name="name" value="{{ search_name }}" placeholder="e.g. Ali" class="form-control" style="width:200px;">
-    </div>
-    <div class="form-group" style="margin-bottom:0;">
-      <label>Date From</label>
-      <input type="date" name="date_from" value="{{ search_date_from }}" class="form-control">
-    </div>
-    <div class="form-group" style="margin-bottom:0;">
-      <label>Date To</label>
-      <input type="date" name="date_to" value="{{ search_date_to }}" class="form-control">
-    </div>
-    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Filter</button>
-    <a href="{% url 'device_detail' device.pk %}" class="btn btn-secondary">Clear</a>
-    <a href="{% url 'attendance_report_csv' device.pk %}?name={{ search_name }}&date_from={{ search_date_from }}&date_to={{ search_date_to }}"
-       class="btn btn-success" style="margin-left:auto;">
-      <i class="fa-solid fa-file-csv"></i> Download CSV
-    </a>
+<a href="{% url 'attendance_report_csv' device.pk %}?name={{ search_name }}&date_from={{ search_date_from }}&date_to={{ search_date_to }}"
+   class="btn btn-success" style="margin-left:auto;">
+  <i class="fa-solid fa-file-csv"></i> Download CSV
+</a>
+
   </form>
 </div>
 
@@ -106,48 +129,60 @@
 
   <table>
     <thead>
-      <tr>
-        <th>User ID</th>
-        <th>Employee Name</th>
-        <th>Punch Time</th>
-        <th>Punch Type</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for log in page_obj %}
-      <tr>
-        <td style="font-family:'JetBrains Mono',monospace;color:var(--text3);">{{ log.user_id }}</td>
-        <td style="font-weight:600;font-size:13px;">{{ log.employee_name|default:"—" }}</td>
-        <td style="font-size:13px;">{{ log.punch_time|date:"M d, Y H:i:s" }}</td>
-        <td>
-          {% if log.punch_type == "0" %}
-            <span class="badge badge-success">Check In</span>
-          {% elif log.punch_type == "1" %}
-            <span class="badge badge-danger">Check Out</span>
-          {% elif log.punch_type == "2" %}
-            <span class="badge badge-warning">Break Out</span>
-          {% elif log.punch_type == "3" %}
-            <span class="badge badge-warning">Break In</span>
-          {% elif log.punch_type == "4" %}
-            <span class="badge badge-info">Overtime In</span>
-          {% elif log.punch_type == "5" %}
-            <span class="badge badge-info">Overtime Out</span>
-          {% else %}
-            <span class="badge">{{ log.punch_type|default:"—" }}</span>
-          {% endif %}
-        </td>
-        <td style="color:var(--text3);font-size:12px;">{{ log.status }}</td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="5" style="text-align:center;padding:50px;color:var(--text3);">
-          <div style="font-size:40px;margin-bottom:12px;">📋</div>
-          <div>No records found. Click Sync to pull data from device.</div>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
+  <tr>
+    <th>Device ID</th>
+    <th>Employee Name</th>
+    <th>Date</th>
+    <th>Check In</th>
+    <th>Check Out</th>
+    <th>Duration</th>
+    <!-- <th>Other Punches</th> -->
+  </tr>
+</thead>
+<tbody>
+  {% for row in page_obj %}
+  <tr>
+    <td style="font-family:'JetBrains Mono',monospace;color:var(--text3);">{{ row.user_id }}</td>
+    <td style="font-weight:600;font-size:13px;">{{ row.employee_name|default:"—" }}</td>
+    <td style="font-size:13px;">{{ row.date|date:"M d, Y" }}</td>
+    <td>
+      {% if row.check_in %}
+        <span class="badge badge-success">{{ row.check_in|date:"H:i:s" }}</span>
+      {% else %}
+        <span style="color:var(--text3);">—</span>
+      {% endif %}
+    </td>
+    <td>
+      {% if row.check_out %}
+        <span class="badge badge-danger">{{ row.check_out|date:"H:i:s" }}</span>
+      {% else %}
+        <span style="color:var(--text3);">—</span>
+      {% endif %}
+    </td>
+    <td style="font-size:12px;color:var(--text3);">
+      {% if row.check_in and row.check_out %}
+        {% with diff=row.check_out|timeuntil:row.check_in %}{{ diff }}{% endwith %}
+      {% else %}—{% endif %}
+    </td>
+    <!-- <td style="font-size:12px;color:var(--text3);">
+      {% for p in row.other_punches %}
+        {% if p.type == "2" %}<span class="badge badge-warning" style="margin-right:4px;">Break Out {{ p.time|date:"H:i" }}</span>
+        {% elif p.type == "3" %}<span class="badge badge-warning" style="margin-right:4px;">Break In {{ p.time|date:"H:i" }}</span>
+        {% elif p.type == "4" %}<span class="badge badge-info" style="margin-right:4px;">OT In {{ p.time|date:"H:i" }}</span>
+        {% elif p.type == "5" %}<span class="badge badge-info" style="margin-right:4px;">OT Out {{ p.time|date:"H:i" }}</span>
+        {% endif %}
+      {% empty %}—{% endfor %}
+    </td> -->
+  </tr>
+  {% empty %}
+  <tr>
+    <td colspan="7" style="text-align:center;padding:50px;color:var(--text3);">
+      <div style="font-size:40px;margin-bottom:12px;">📋</div>
+      <div>No records found. Click Sync to pull data from device.</div>
+    </td>
+  </tr>
+  {% endfor %}
+</tbody>
   </table>
 
   <!-- Pagination -->
