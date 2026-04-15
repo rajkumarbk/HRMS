@@ -4,6 +4,7 @@ from django.contrib.auth.models import (
     BaseUserManager,
     PermissionsMixin,
 )
+from django.core.validators import RegexValidator
 from django_countries.fields import CountryField
 from django.utils import timezone
 
@@ -39,7 +40,6 @@ class Department(models.Model):
 
 
 class Employee(AbstractBaseUser, PermissionsMixin):
-    # Role choices
     ROLE_CHOICES = [
         ("ceo", "CEO 👑"),
         ("hr", "HR ⭐ "),
@@ -48,7 +48,6 @@ class Employee(AbstractBaseUser, PermissionsMixin):
         ("officer", "Officer"),
         ("employee", "Employee"),
     ]
-    # In Employee model, add ADVANCE_ROLE_CHOICES and advance_role field:
 
     ADVANCE_ROLE_CHOICES = [
         ("top_manager", "Top Manager"),
@@ -64,7 +63,11 @@ class Employee(AbstractBaseUser, PermissionsMixin):
         default="",
     )
 
-    iqama_number = models.CharField(max_length=20, unique=True)
+    iqama_number = models.CharField(
+        max_length=20,
+        unique=True,
+        validators=[RegexValidator(r"^\d+$", "Only numbers allowed")],
+    )
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
@@ -87,6 +90,19 @@ class Employee(AbstractBaseUser, PermissionsMixin):
         blank=True,
     )
     number_of_dependents = models.IntegerField(default=0)
+    religion = models.CharField(
+        max_length=50,
+        choices=[
+            ("islam", "Islam"),
+            ("christianity", "Christianity"),
+            ("hinduism", "Hinduism"),
+            ("buddhism", "Buddhism"),
+            ("sikhism", "Sikhism"),
+            ("judaism", "Judaism"),
+            ("other", "Other"),
+        ],
+        blank=True,
+    )
     personal_photo = models.ImageField(upload_to="photos/", null=True, blank=True)
     passport_number = models.CharField(max_length=50, blank=True)
     passport_expiry = models.DateField(null=True, blank=True)
@@ -97,11 +113,40 @@ class Employee(AbstractBaseUser, PermissionsMixin):
     city = models.CharField(max_length=100, blank=True)
     country = CountryField(default="SA", blank=True)
     emergency_contact_name = models.CharField(max_length=200, blank=True)
-    emergency_relationship = models.CharField(max_length=100, blank=True)
+    emergency_relationship = models.CharField(
+        max_length=100,
+        choices=[
+            ("spouse", "Spouse"),
+            ("parent", "Parent"),
+            ("child", "Child"),
+            ("sibling", "Sibling"),
+            ("friend", "Friend"),
+            ("other", "Other"),
+        ],
+        blank=True,
+    )
     emergency_contact_number = models.CharField(max_length=20, blank=True)
     social_insurance_number = models.CharField(max_length=50, blank=True)
     bank_account_iban = models.CharField(max_length=50, blank=True)
-    bank_name = models.CharField(max_length=100, blank=True)
+    bank_name = models.CharField(
+        max_length=50,
+        choices=[
+            ("alrajhi", "Al Rajhi Bank"),
+            ("alinma", "Alinma Bank"),
+            ("riyad", "Riyad Bank"),
+            ("snb", "Saudi National Bank (SNB)"),
+            ("sabb", "SABB (Saudi British Bank)"),
+            ("albilad", "Bank Albilad"),
+            ("aljazira", "Bank Aljazira"),
+            ("arab_national", "Arab National Bank"),
+            ("gulf_international", "Gulf International Bank"),
+            ("saudi_investment", "The Saudi Investment Bank"),
+            ("emirates_nbd", "Emirates NBD"),
+            ("bank_muscat", "Bank Muscat"),
+            ("other", "Other"),
+        ],
+        blank=True,
+    )
     iqama_expiry_date = models.DateField(null=True, blank=True)
     profession_per_iqama = models.CharField(max_length=200, blank=True)
     employee_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
@@ -220,7 +265,6 @@ class TimeOffRequest(models.Model):
         ("refused", "Refused"),
         ("cancelled", "Cancelled"),
     ]
-    # In TimeOffRequest model, replace/extend:
 
     APPROVAL_STATE_CHOICES = [
         ("draft", "Draft"),
@@ -241,7 +285,6 @@ class TimeOffRequest(models.Model):
         ("hr", "HR"),
     ]
 
-    # Replace the old `status` field with:
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     approval_state = models.CharField(
         max_length=20, choices=APPROVAL_STATE_CHOICES, default="draft"
@@ -251,16 +294,16 @@ class TimeOffRequest(models.Model):
     )
     refused_reason = models.TextField(blank=True)
     employee = models.ForeignKey(
-            Employee, on_delete=models.CASCADE, related_name="time_off_requests"
-        )
+        Employee, on_delete=models.CASCADE, related_name="time_off_requests"
+    )
     leave_type = models.ForeignKey(TimeOffType, on_delete=models.CASCADE)
     date_from = models.DateField()
     date_to = models.DateField()
     supporting_document = models.FileField(
-    upload_to="timeoff_documents/",
-    null=True,
-    blank=True,
-    )   
+        upload_to="timeoff_documents/",
+        null=True,
+        blank=True,
+    )
     reason = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     approved_by = models.ForeignKey(
@@ -274,6 +317,7 @@ class TimeOffRequest(models.Model):
 
     def __str__(self):
         return f"{self.employee.full_name} - {self.leave_type.name}"
+
     @property
     def is_branch_manager(self):
         return self.role == "branch_manager"
@@ -285,6 +329,7 @@ class TimeOffRequest(models.Model):
     @property
     def is_ceo(self):
         return self.role == "ceo"
+
     @property
     def days_count(self):
         return (self.date_to - self.date_from).days + 1
@@ -363,16 +408,13 @@ class Message(models.Model):
     )
     content = models.TextField()
     attachment = models.FileField(
-    upload_to="chat_attachments/",
-    null=True,
-    blank=True,
+        upload_to="chat_attachments/",
+        null=True,
+        blank=True,
     )
     is_announcement = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
-
-
-# Add this after your existing models (before the last closing line)
 
 
 class Asset(models.Model):
@@ -385,19 +427,16 @@ class Asset(models.Model):
         ("tools", "Tools / Equipment Custody"),
         ("other", "Special / Other Custody"),
     ]
-    # Status
-    is_returned = models.BooleanField(default=False)  # This should be default=False
+    is_returned = models.BooleanField(default=False)
     condition_on_handover = models.TextField(blank=True)
     condition_on_return = models.TextField(blank=True)
 
-    # Asset Information
     name = models.CharField(max_length=200)
     custody_type = models.CharField(max_length=50, choices=CUSTODY_TYPE_CHOICES)
     description = models.TextField(blank=True)
     serial_number = models.CharField(max_length=100, blank=True)
     model_number = models.CharField(max_length=100, blank=True)
 
-    # Assignment tracking
     assigned_to = models.ForeignKey(
         "Employee",
         on_delete=models.SET_NULL,
@@ -408,8 +447,6 @@ class Asset(models.Model):
     assigned_date = models.DateField(null=True, blank=True)
     expected_return_date = models.DateField(null=True, blank=True)
     returned_date = models.DateField(null=True, blank=True)
-
-    # Status
     is_returned = models.BooleanField(default=False)
     condition_on_handover = models.TextField(
         blank=True, help_text="Condition when handed over"
@@ -417,8 +454,6 @@ class Asset(models.Model):
     condition_on_return = models.TextField(
         blank=True, help_text="Condition when returned"
     )
-
-    # Additional info
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
@@ -438,9 +473,6 @@ class Asset(models.Model):
             return "available"
 
 
-# Add after the Asset model
-
-
 class EmployeeDocument(models.Model):
     DOCUMENT_TYPES = [
         ("iqama", "Iqama / ID"),
@@ -453,7 +485,6 @@ class EmployeeDocument(models.Model):
         ("insurance", "Insurance"),
         ("other", "Other"),
     ]
-
     employee = models.ForeignKey(
         Employee, on_delete=models.CASCADE, related_name="documents"
     )
@@ -502,8 +533,6 @@ class AdvanceSalaryRequest(models.Model):
         ("rejected", "Rejected"),
         ("paid", "Paid"),
     ]
-    # In AdvanceSalaryRequest model, replace/add:
-
     ADVANCE_APPROVAL_STATE_CHOICES = [
         ("draft", "Draft"),
         ("submitted", "Submitted"),
@@ -515,14 +544,11 @@ class AdvanceSalaryRequest(models.Model):
         ("paid", "Paid"),
         ("rejected", "Rejected"),
     ]
-
     ADVANCE_REQUESTER_ROLE_CHOICES = [
         ("top_manager", "Top Manager"),
         ("hr", "HR"),
         ("other", "Other"),
     ]
-
-    # Keep existing status field as-is, add these two:
     approval_state = models.CharField(
         max_length=30,
         choices=ADVANCE_APPROVAL_STATE_CHOICES,
@@ -534,7 +560,6 @@ class AdvanceSalaryRequest(models.Model):
         blank=True,
         default="",
     )
-
     employee = models.ForeignKey(
         Employee, on_delete=models.CASCADE, related_name="advance_requests"
     )

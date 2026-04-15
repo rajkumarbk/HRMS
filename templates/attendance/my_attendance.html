@@ -42,7 +42,6 @@
                     <th>Check In</th>
                     <th>Check Out</th>
                     <th>Worked Hours</th>
-                    <th>Source</th>
                 </tr>
             </thead>
             <tbody>
@@ -55,11 +54,6 @@
                         {% if att.worked_hours %}
                         {{ att.worked_hours }} hrs
                         {% else %}—{% endif %}
-                    </td>
-                    <td>
-                        <span class="badge badge-{% if att.source == 'zkteco' %}success{% else %}warning{% endif %}">
-                            {{ att.get_source_display }}
-                        </span>
                     </td>
                 </tr>
                 {% endfor %}
@@ -74,8 +68,8 @@
         <a href="?page={{ page_obj.previous_page_number }}&date_from={{ date_from }}&date_to={{ date_to }}"
             class="btn btn-secondary btn-sm">← Prev</a>
         {% endif %}
-        <span style="padding:6px 12px;font-size:13px;">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages
-            }}</span>
+        <span style="padding:6px 12px;font-size:13px;">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
         {% if page_obj.has_next %}
         <a href="?page={{ page_obj.next_page_number }}&date_from={{ date_from }}&date_to={{ date_to }}"
             class="btn btn-secondary btn-sm">Next →</a>

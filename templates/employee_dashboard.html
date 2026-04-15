@@ -52,17 +52,17 @@
 
 <!-- Stats Cards -->
 <div class="grid-4" style="margin-bottom:24px;">
-    <div class="stat-card blue stagger-1">
+    <div class="stat-card blue stagger-1" onclick="window.location='{% url 'my_attendance' %}'" style="cursor:pointer;">
         <div class="stat-icon blue"><i class="fa-solid fa-calendar-check"></i></div>
         <div class="stat-value">{{ attendance_this_month }}</div>
         <div class="stat-label">Days Present (This Month)</div>
     </div>
-    <div class="stat-card cyan stagger-2">
+    <div class="stat-card cyan stagger-2" onclick="window.location='{% url 'timeoff_list' %}'" style="cursor:pointer;">
         <div class="stat-icon cyan"><i class="fa-solid fa-hourglass-half"></i></div>
         <div class="stat-value">{{ pending_leaves }}</div>
         <div class="stat-label">Pending Leaves</div>
     </div>
-    <div class="stat-card green stagger-3">
+    <div class="stat-card green stagger-3"  onclick="window.location='{% url 'timeoff_list' %}'" style="cursor:pointer;">
         <div class="stat-icon green"><i class="fa-solid fa-check-circle"></i></div>
         <div class="stat-value">{{ approved_leaves }}</div>
         <div class="stat-label">Approved Leaves</div>
@@ -72,7 +72,7 @@
         <div class="stat-value">{{ unread_messages }}</div>
         <div class="stat-label">Unread Messages</div>
     </div> -->
-    <div class="stat-card purple stagger-4">
+    <div class="stat-card purple stagger-4" onclick="window.location='{% url 'advance_salary_list' %}'" style="cursor:pointer;">
     <div class="stat-icon orange"><i class="fa-solid fa-money-bill-wave"></i></div>
     <div class="stat-value">{{ advance_pending }}</div>
     <div class="stat-label">Pending Advance Requests</div>

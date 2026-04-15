@@ -9,75 +9,14 @@
     <div class="page-subtitle">Manage system access for employees</div>
   </div>
   <button class="btn btn-primary" onclick="openCreateModal()">
-    <i class="fa-solid fa-user-plus"></i> Create User Account
+    <i class="fa-solid fa-plus"></i> New
   </button>
 </div>
-<style>
-  .role-badge {
-  display: inline-block;
-  padding: 5px 12px;
-  font-size: 12px;
-  font-weight: 500;
-  border-radius: 999px;
-  letter-spacing: 0.3px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(6px);
-  transition: all 0.2s ease;
-}
 
-/* CEO - gold accent */
-.role-ceo {
-  color: #ffcc66;
-  border-color: rgba(255, 204, 102, 0.4);
-  background: rgba(255, 204, 102, 0.08);
-}
-
-/* HR - blue accent */
-.role-hr {
-  color: #66aaff;
-  border-color: rgba(102, 170, 255, 0.4);
-  background: rgba(102, 170, 255, 0.08);
-}
-
-/* Manager - green accent */
-.role-manager {
-  color: #4dd4a3;
-  border-color: rgba(77, 212, 163, 0.4);
-  background: rgba(77, 212, 163, 0.08);
-}
-
-/* Branch Manager - purple accent */
-.role-branch_manager {
-  color: #b388ff;
-  border-color: rgba(179, 136, 255, 0.4);
-  background: rgba(179, 136, 255, 0.08);
-}
-
-/* Officer - cyan accent */
-.role-officer {
-  color: #4dd0e1;
-  border-color: rgba(77, 208, 225, 0.4);
-  background: rgba(77, 208, 225, 0.08);
-}
-
-/* Employee - neutral */
-.role-employee {
-  color: #9aa4b2;
-  border-color: rgba(154, 164, 178, 0.3);
-  background: rgba(154, 164, 178, 0.06);
-}
-
-/* subtle glow on hover */
-.role-badge:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 0 10px rgba(255,255,255,0.05);
-}
-</style>
 <!-- Users Table -->
 
 <div class="card animate-fade-up">
-  <div class="table-wrapper">
+  <div class="table-wrapper"  style="max-height: 700px; overflow-y: auto;">
     <div class="card" style="margin-bottom:20px;">
   <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
 
@@ -126,7 +65,7 @@
   </form>
 </div>
     <table class="table">
-      <thead>
+      <thead style="position: sticky; top: 0;">
         <tr>
           <th>Employee</th>
           <th>Iqama Number</th>
@@ -157,7 +96,7 @@
             </span>
           </td> -->
           <td>
-  <span class="role-badge role-{{ emp.role }}">
+  <span class="badge badge-{% if emp.role == 'ceo' %}warning{% elif emp.role == 'hr' %}info{% elif emp.role == 'manager' %}success{% elif emp.role == 'branch_manager' %}primary{% elif emp.role == 'officer' %}secondary{% else %}light{% endif %}">
     {{ emp.get_role_display }}
   </span>
 </td>

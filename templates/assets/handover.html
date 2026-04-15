@@ -9,7 +9,7 @@
     <div class="page-subtitle">Track assets issued to employees</div>
   </div>
   <button class="btn btn-primary" onclick="openHandoverModal()">
-    <i class="fa-solid fa-hand-holding"></i> New Handover
+    <i class="fa-solid fa-plus"></i> New
   </button>
 </div>
 
@@ -65,11 +65,11 @@
 
   </form>
 </div>
-<div id="tab-handover" class="tab-content active">
+<div id="tab-handover" class="tab-content active"  style="max-height: 500px; overflow-y: auto;">
   <div class="card">
     <div class="table-wrapper">
       <table class="table">
-        <thead>
+        <thead style="position: sticky; top: 0;">
           <tr>
             <th>Asset Name</th>
             <th>Custody Type</th>
@@ -116,9 +116,9 @@
 <!-- Tab 2: Return (Returned Assets History) -->
 <div id="tab-return" class="tab-content">
   <div class="card">
-    <div class="table-wrapper">
+    <div class="table-wrapper" style="max-height: 500px; overflow-y: auto;">
       <table class="table">
-        <thead>
+        <thead style="position: sticky; top: 0;">
           <tr>
             <th>Asset Name</th>
             <th>Custody Type</th>

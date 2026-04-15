@@ -11,7 +11,7 @@
     </div>
   </div>
   <a href="{% url 'advance_salary_create' %}" class="btn btn-primary">
-    <i class="fa-solid fa-plus"></i> New Request
+    <i class="fa-solid fa-plus"></i> New
   </a>
 </div>
 
@@ -48,11 +48,11 @@
 </div>
 
 <!-- Table -->
-<div class="card">
+<div class="card"  style="max-height: 500px; overflow-y: auto;">
   {% if advances %}
   <div class="table-wrapper">
     <table class="table">
-      <thead>
+      <thead style="position: sticky; top: 0;">
         <tr>
           {% if request.user.is_hr %}<th>Employee</th>{% endif %}
           <th>Amount (SAR)</th>
@@ -61,7 +61,7 @@
           <th>Requested</th>
           <th>Document</th>
           <th>Status</th>
-          <!-- <th>Actions</th> -->
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>

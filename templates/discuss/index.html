@@ -170,12 +170,12 @@
     <div class="page-subtitle">Messages & Announcements</div>
   </div>
   {% if request.user.is_staff %}
-  <button onclick="toggleAnnounce()" class="btn btn-secondary"><i class="fa-solid fa-bullhorn"></i> New Announcement</button>
+  <button onclick="toggleAnnounce()" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New</button>
   {% endif %}
 </div>
 
 <!-- Announcement Form (Staff Only) -->
-{% if request.user.is_staff %}
+{% if request.user.is_hr %}
 <div id="announceForm" style="display:none;margin-bottom:20px;">
   <form method="post" class="card animate-fade-up">
     {% csrf_token %}
@@ -187,37 +187,52 @@
       <textarea name="content" rows="3" placeholder="Write your announcement here..."></textarea>
     </div>
     <div style="display:flex;justify-content:flex-end;gap:10px;">
-      <button type="button" onclick="toggleAnnounce()" class="btn btn-secondary">Cancel</button>
+      <button type="button" onclick="toggleAnnounce()" class="btn btn-danger"><i class="fa-solid fa-xmark"></i> Cancel</button>
       <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Post</button>
     </div>
   </form>
 </div>
 {% endif %}
 
-<!-- Announcements -->
-{% if announcements %}
 <div class="card" style="margin-bottom:20px;">
-  <div style="font-size:14px;font-weight:600;color:var(--warning);margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+
+  <!-- Sticky Header -->
+  <div style="font-size:14px;font-weight:600;color:var(--warning);
+              margin-bottom:10px;display:flex;align-items:center;gap:8px;
+              position:sticky;top:0;background:var(--card-bg);z-index:2;padding:10px 0;">
     <i class="fa-solid fa-bullhorn"></i> Announcements
   </div>
-  <div style="display:flex;flex-direction:column;gap:10px;">
+
+  <!-- Scrollable body -->
+  <div style="max-height:300px; overflow-y:auto; display:flex;flex-direction:column;gap:10px;">
+
     {% for ann in announcements %}
-    <div class="animate-fade-up" style="background:var(--bg3);border:1px solid rgba(245,158,11,0.15);border-left:3px solid var(--warning);border-radius:10px;padding:14px 16px;">
+    <div class="animate-fade-up" style="background:var(--bg3);border:1px solid rgba(245,158,11,0.15);
+         border-left:3px solid var(--warning);border-radius:10px;padding:14px 16px;">
+
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-        <div class="emp-avatar" style="background:linear-gradient(135deg,var(--warning),#ef4444);width:30px;height:30px;font-size:12px;">
+        <div class="emp-avatar" style="background:linear-gradient(135deg,var(--warning),#ef4444);
+             width:30px;height:30px;font-size:12px;">
           {{ ann.sender.full_name|first|upper }}
         </div>
+
         <div>
           <span style="font-size:13px;font-weight:600;">{{ ann.sender.full_name }}</span>
-          <span style="font-size:11px;color:var(--text3);margin-left:8px;">{{ ann.created_at|date:"M d, Y H:i" }}</span>
+          <span style="font-size:11px;color:var(--text3);margin-left:8px;">
+            {{ ann.created_at|date:"M d, Y H:i" }}
+          </span>
         </div>
       </div>
-      <div style="font-size:13.5px;color:var(--text);line-height:1.6;">{{ ann.content }}</div>
+
+      <div style="font-size:13.5px;color:var(--text);line-height:1.6;">
+        {{ ann.content }}
+      </div>
+
     </div>
     {% endfor %}
+
   </div>
 </div>
-{% endif %}
 
 <!-- Chat Layout -->
 <div class="chat-layout">
@@ -226,7 +241,7 @@
     <div class="chat-sidebar-header">
       <i class="fa-solid fa-users" style="color:var(--accent2);margin-right:8px;"></i> People
     </div>
-    <div class="chat-user-list">
+    <div class="chat-user-list" style="max-height:calc(100vh - 120px); overflow-y:auto;">
       {% for emp in employees %}
       <a href="?chat={{ emp.pk }}" class="chat-user-item {% if chat_user and chat_user.pk == emp.pk %}active{% endif %}">
         <div class="emp-avatar" style="width:34px;height:34px;font-size:12px;flex-shrink:0;">

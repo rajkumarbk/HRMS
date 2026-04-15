@@ -2,19 +2,24 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.conf import settings
 from django.utils import timezone
 from collections import defaultdict
 from django.db.models import Q
+from django_countries import countries
+from zk import ZK, const
 from .models import (
     Employee,
     TimeOffRequest,
     AttendanceRecord,
+    EmployeeDocument,
     ZKTecoDevice,
     Message,
     Department,
     TimeOffType,
     Asset,
     AdvanceSalaryRequest,
+    ZKAttendanceLog,
 )
 from .forms import (
     LoginForm,
@@ -22,17 +27,14 @@ from .forms import (
     EmployeeContactForm,
     EmployeeWorkForm,
     EmployeeFinancialForm,
+    EmployeeDocumentForm,
     TimeOffRequestForm,
     ZKTecoDeviceForm,
-    MessageForm,
+    MessageForm,    
     AdvanceSalaryRequestForm,
 )
 from .decorators import hr_required, employee_owner_or_hr_required
 from django.core.mail import send_mail
-from django.conf import settings
-from .models import EmployeeDocument
-from .forms import EmployeeDocumentForm
-
 import logging
 import csv
 from django.core.paginator import Paginator
@@ -41,11 +43,14 @@ from django.http import HttpResponse
 logger = logging.getLogger(__name__)
 
 try:
-    from zk import ZK  # type: ignore
+    from zk import ZK
 except ImportError:
     ZK = None
 
 
+# --- ATTENDANCE VIEWS ---
+@login_required
+@hr_required
 def _connect_device(ip, port, password=0):
     if ZK is None:
         return None, None
@@ -64,10 +69,92 @@ def _connect_device(ip, port, password=0):
         logger.warning(f"ZKTeco connection failed: {e}")
         return None, None
 
+@login_required
+def attendance_list(request):
+    today = timezone.now().date()
+
+    if request.user.is_hr:
+        # HR sees all attendance records
+        devices = ZKTecoDevice.objects.all()
+        records = (
+            AttendanceRecord.objects.filter(date=today)
+            .select_related("employee")
+            .order_by("-check_in")
+        )
+    else:
+        # Regular employee sees only their own attendance
+        devices = None
+        records = (
+            AttendanceRecord.objects.filter(employee=request.user, date=today)
+            .select_related("employee")
+            .order_by("-check_in")
+        )
+
+    return render(
+        request,
+        "attendance/list.html",
+        {"devices": devices, "records": records, "today": today},
+    )
+
+
+@login_required
+@hr_required  # Only HR can sync attendance devices
+def attendance_sync(request, device_id):
+    device = get_object_or_404(ZKTecoDevice, pk=device_id)
+    messages.info(
+        request,
+        f"Sync initiated for {device.name} ({device.ip_address}:{device.port}). Install pyzk library to enable real sync.",
+    )
+    return redirect("attendance_list")
+
+
+@login_required
+def my_attendance(request):
+    employee = request.user
+    qs = AttendanceRecord.objects.filter(employee=employee).order_by("-date")
+
+    # Optional filters
+    date_from = request.GET.get("date_from", "").strip()
+    date_to = request.GET.get("date_to", "").strip()
+    if date_from:
+        qs = qs.filter(date__gte=date_from)
+    if date_to:
+        qs = qs.filter(date__lte=date_to)
+
+    # Month summary
+    today = timezone.now().date()
+    this_month_count = AttendanceRecord.objects.filter(
+        employee=employee, date__year=today.year, date__month=today.month
+    ).count()
+
+    paginator = Paginator(qs, 25)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    return render(
+        request,
+        "attendance/my_attendance.html",
+        {
+            "page_obj": page_obj,
+            "date_from": date_from,
+            "date_to": date_to,
+            "this_month_count": this_month_count,
+            "employee": employee,
+        },
+    )
+
+
+@login_required
+@hr_required
+def device_add(request):
+    form = ZKTecoDeviceForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Device added successfully.")
+        return redirect("attendance_list")
+    return render(request, "attendance/device_form.html", {"form": form})
+
 
 def _process_zk_logs_to_attendance(device):
-    from .models import ZKAttendanceLog
-    from collections import defaultdict
 
     employee_cache = {}
     logs = device.logs.order_by("punch_time")
@@ -285,8 +372,6 @@ def device_detail(request, pk):
 @login_required
 @hr_required
 def device_sync(request, pk):
-    from .models import ZKAttendanceLog
-
     device = get_object_or_404(ZKTecoDevice, pk=pk)
 
     if ZK is None:
@@ -354,8 +439,6 @@ def device_sync(request, pk):
 @login_required
 @hr_required
 def attendance_report_csv(request, pk):
-    from .models import ZKAttendanceLog
-
     device = get_object_or_404(ZKTecoDevice, pk=pk)
 
     logs_qs = device.logs.all()
@@ -512,7 +595,7 @@ def dashboard(request):
         }
         return render(request, "employee_dashboard.html", context)
 
-
+# --- Employee Views ---
 @login_required
 @hr_required
 def employee_list(request):
@@ -549,7 +632,6 @@ def employee_create(request):
     if request.method == "POST":
         tab = request.POST.get("tab", "basic")
 
-        # Create new employee instance
         employee = Employee()
 
         # Basic Info
@@ -561,9 +643,9 @@ def employee_create(request):
         employee.gender = request.POST.get("gender", "")
         employee.marital_status = request.POST.get("marital_status", "")
         employee.number_of_dependents = int(request.POST.get("number_of_dependents", 0))
+        employee.religion = request.POST.get("religion", "")
         employee.passport_number = request.POST.get("passport_number", "")
         employee.passport_expiry = request.POST.get("passport_expiry") or None
-        # employee.zkteco_uid = request.POST.get("zkteco_uid", "") or None
         employee.zkteco_uid = request.POST.get("zkteco_uid", "").strip() or None
         if request.FILES.get("personal_photo"):
             employee.personal_photo = request.FILES["personal_photo"]
@@ -576,7 +658,7 @@ def employee_create(request):
         employee.city = request.POST.get("city", "")
         employee.country = request.POST.get(
             "country", "SA"
-        )  # 'SA' is the code for Saudi Arabia
+        )
         employee.emergency_contact_name = request.POST.get("emergency_contact_name", "")
         employee.emergency_relationship = request.POST.get("emergency_relationship", "")
         employee.emergency_contact_number = request.POST.get(
@@ -634,7 +716,6 @@ def employee_create(request):
         )
         employee.salary_payment_date = int(request.POST.get("salary_payment_date", 1))
 
-        # Set default password
         employee.set_password("12345678")
 
         # Validate required fields
@@ -679,6 +760,8 @@ def employee_create(request):
             "departments": departments,
             "managers": managers,
             "active_tab": request.GET.get("tab", "basic"),
+            "countries": countries,
+            "place_of_birth": countries,
         },
     )
 
@@ -740,12 +823,13 @@ def employee_detail(request, pk):
         "allowed_tabs_for_employee": (
             allowed_tabs_for_employee if not request.user.is_hr else None
         ),
+        "countries": countries,
+        "place_of_birth": countries,
     }
     return render(request, "employee/detail.html", context)
 
 
 # --- TIME OFF VIEWS ---
-
 def _get_requester_role(user):
     """Mirrors Odoo's _get_requester_role — highest role wins."""
     role = user.role
@@ -769,18 +853,6 @@ def _is_respective_manager(user, leave_request):
 
 
 def _can_approve(user, leave):
-    """
-    Returns the action name if the user can approve this leave at its current stage,
-    otherwise None.
-
-    Approval matrix (mirrors hr_leave.py):
-      Branch Manager  → submitted        + requester=employee
-      Manager         → branch_approved  + requester=employee
-                        submitted        + requester=branch_manager
-                        submitted        + requester=officer  (respective manager only)
-      CEO             → submitted        + requester in (manager, hr)
-      HR              → manager_approved OR ceo_approved (any requester)
-    """
     state = leave.approval_state
     role = user.role
 
@@ -983,92 +1055,6 @@ def timeoff_reset(request, pk):
     return redirect("timeoff_list")
 
 
-# --- ATTENDANCE VIEWS ---
-@login_required
-def attendance_list(request):
-    today = timezone.now().date()
-
-    if request.user.is_hr:
-        # HR sees all attendance records
-        devices = ZKTecoDevice.objects.all()
-        records = (
-            AttendanceRecord.objects.filter(date=today)
-            .select_related("employee")
-            .order_by("-check_in")
-        )
-    else:
-        # Regular employee sees only their own attendance
-        devices = None
-        records = (
-            AttendanceRecord.objects.filter(employee=request.user, date=today)
-            .select_related("employee")
-            .order_by("-check_in")
-        )
-
-    return render(
-        request,
-        "attendance/list.html",
-        {"devices": devices, "records": records, "today": today},
-    )
-
-
-@login_required
-@hr_required  # Only HR can sync attendance devices
-def attendance_sync(request, device_id):
-    device = get_object_or_404(ZKTecoDevice, pk=device_id)
-    messages.info(
-        request,
-        f"Sync initiated for {device.name} ({device.ip_address}:{device.port}). Install pyzk library to enable real sync.",
-    )
-    return redirect("attendance_list")
-
-
-@login_required
-def my_attendance(request):
-    employee = request.user
-    qs = AttendanceRecord.objects.filter(employee=employee).order_by("-date")
-
-    # Optional filters
-    date_from = request.GET.get("date_from", "").strip()
-    date_to = request.GET.get("date_to", "").strip()
-    if date_from:
-        qs = qs.filter(date__gte=date_from)
-    if date_to:
-        qs = qs.filter(date__lte=date_to)
-
-    # Month summary
-    today = timezone.now().date()
-    this_month_count = AttendanceRecord.objects.filter(
-        employee=employee, date__year=today.year, date__month=today.month
-    ).count()
-
-    paginator = Paginator(qs, 25)
-    page_obj = paginator.get_page(request.GET.get("page"))
-
-    return render(
-        request,
-        "attendance/my_attendance.html",
-        {
-            "page_obj": page_obj,
-            "date_from": date_from,
-            "date_to": date_to,
-            "this_month_count": this_month_count,
-            "employee": employee,
-        },
-    )
-
-
-@login_required
-@hr_required  # Only HR can add devices
-def device_add(request):
-    form = ZKTecoDeviceForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Device added successfully.")
-        return redirect("attendance_list")
-    return render(request, "attendance/device_form.html", {"form": form})
-
-
 # --- DISCUSS VIEWS ---
 @login_required
 def discuss(request):
@@ -1133,8 +1119,7 @@ def discuss(request):
         },
     )
 
-    # --- USER ACCOUNT VIEWS ---
-
+# --- USER ACCOUNT VIEWS ---
 @login_required
 @hr_required
 def user_accounts(request):
@@ -1457,139 +1442,7 @@ def check_expiring_documents():
             """
             send_mail(subject, hr_message, settings.DEFAULT_FROM_EMAIL, list(hr_emails))
 
-
-# ─── Advance Salary Helpers ───────────────────────────────────────────────────
-
-def _get_advance_requester_role(user):
-    """
-    Detect requester role for advance salary flow.
-    Uses advance_role for top_manager, role field for hr, else 'other'.
-    """
-    if user.advance_role in ("top_manager","accountant"):
-        return "top_manager"
-    if user.role == "hr":
-        return "hr"
-    return "other"
-
-
-def _can_approve_advance(user, adv):
-    """
-    Returns True if it is this user's turn to approve.
-
-    Flow A — top_manager requester:
-        submitted → hr_approved → ceo_approved → bank_approved → paid
-
-    Flow B — hr requester:
-        submitted → accountant_approved → ceo_approved → bank_approved → paid
-
-    Flow C — other requester:
-        submitted → hr_approved → sub_accountant_approved → accountant_approved → bank_approved → paid
-
-    Gate: each approver only sees the request when the PREVIOUS stage is done.
-    """
-    state = adv.approval_state
-    rr = adv.requester_role
-
-    if state in ("draft", "paid", "rejected"):
-        return False
-
-    # HR approves:
-    #   Flow A: submitted
-    #   Flow C: submitted
-    if user.role == "hr":
-        if rr == "top_manager" and state == "submitted":
-            return True
-        if rr == "other" and state == "submitted":
-            return True
-        return False
-
-    # Accountant approves:
-    #   Flow B: submitted
-    #   Flow C: hr_approved
-    if user.advance_role == "accountant":
-        if rr == "hr" and state == "submitted":
-            return True
-        if rr == "other" and state == "hr_approved":
-            return True
-        return False
-
-    # Sub Accountant approves:
-    # Flow C only: hr_approved → sub_accountant_approved
-    if user.advance_role == "sub_accountant":
-        if rr == "other" and state == "hr_approved":
-            return True
-        return False
-
-    # CEO approves:
-    #   Flow A: hr_approved
-    #   Flow B: accountant_approved
-    if user.role == "ceo":
-        if rr == "top_manager" and state == "hr_approved":
-            return True
-        if rr == "hr" and state == "accountant_approved":
-            return True
-        return False
-
-    # Bank User — final step in all flows:
-    #   Flow A: ceo_approved
-    #   Flow B: ceo_approved
-    #   Flow C: accountant_approved
-    if user.advance_role == "bank_user":
-        if rr in ("top_manager", "hr") and state == "ceo_approved":
-            return True
-        if rr == "other" and state == "accountant_approved":
-            return True
-        return False
-
-    return False
-
-
-def _can_refuse_advance(user, adv):
-    """Refuse allowed only at the same stage the user can approve."""
-    if adv.approval_state in ("draft", "paid", "rejected"):
-        return False
-    return _can_approve_advance(user, adv)
-
-
-def _get_next_advance_state(user, adv):
-    """Returns the next approval_state after this user approves."""
-    rr = adv.requester_role
-    state = adv.approval_state
-
-    # Flow A: top_manager
-    if rr == "top_manager":
-        if state == "submitted":
-            return "hr_approved"        # HR just approved
-        if state == "hr_approved":
-            return "ceo_approved"       # CEO just approved
-        if state == "ceo_approved":
-            return "bank_approved"      # Bank just approved → paid
-
-    # Flow B: hr
-    if rr == "hr":
-        if state == "submitted":
-            return "accountant_approved"  # Accountant just approved
-        if state == "accountant_approved":
-            return "ceo_approved"         # CEO just approved
-        if state == "ceo_approved":
-            return "bank_approved"        # Bank just approved → paid
-
-    # Flow C: other
-    if rr == "other":
-        if state == "submitted":
-            return "hr_approved"               # HR just approved
-        if state == "hr_approved":
-            return "sub_accountant_approved"   # Sub Accountant just approved
-        if state == "sub_accountant_approved":
-            return "accountant_approved"       # Accountant just approved
-        if state == "accountant_approved":
-            return "bank_approved"             # Bank just approved → paid
-
-    return None
-
-
 # ─── Advance Salary Views ─────────────────────────────────────────────────────
-
 @login_required
 def advance_salary_list(request):
     user = request.user
@@ -1762,3 +1615,131 @@ def advance_salary_delete(request, pk):
     advance.delete()
     messages.success(request, "Advance request deleted.")
     return redirect("advance_salary_list")
+
+def _get_advance_requester_role(user):
+    """
+    Detect requester role for advance salary flow.
+    Uses advance_role for top_manager, role field for hr, else 'other'.
+    """
+    if user.advance_role in ("top_manager","accountant"):
+        return "top_manager"
+    if user.role == "hr":
+        return "hr"
+    return "other"
+
+
+def _can_approve_advance(user, adv):
+    """
+    Returns True if it is this user's turn to approve.
+
+    Flow A — top_manager requester:
+        submitted → hr_approved → ceo_approved → bank_approved → paid
+
+    Flow B — hr requester:
+        submitted → accountant_approved → ceo_approved → bank_approved → paid
+
+    Flow C — other requester:
+        submitted → hr_approved → sub_accountant_approved → accountant_approved → bank_approved → paid
+
+    Gate: each approver only sees the request when the PREVIOUS stage is done.
+    """
+    state = adv.approval_state
+    rr = adv.requester_role
+
+    if state in ("draft", "paid", "rejected"):
+        return False
+
+    # HR approves:
+    #   Flow A: submitted
+    #   Flow C: submitted
+    if user.role == "hr":
+        if rr == "top_manager" and state == "submitted":
+            return True
+        if rr == "other" and state == "submitted":
+            return True
+        return False
+
+    # Accountant approves:
+    #   Flow B: submitted
+    #   Flow C: hr_approved
+    if user.advance_role == "accountant":
+        if rr == "hr" and state == "submitted":
+            return True
+        if rr == "other" and state == "hr_approved":
+            return True
+        return False
+
+    # Sub Accountant approves:
+    # Flow C only: hr_approved → sub_accountant_approved
+    if user.advance_role == "sub_accountant":
+        if rr == "other" and state == "hr_approved":
+            return True
+        return False
+
+    # CEO approves:
+    #   Flow A: hr_approved
+    #   Flow B: accountant_approved
+    if user.role == "ceo":
+        if rr == "top_manager" and state == "hr_approved":
+            return True
+        if rr == "hr" and state == "accountant_approved":
+            return True
+        return False
+
+    # Bank User — final step in all flows:
+    #   Flow A: ceo_approved
+    #   Flow B: ceo_approved
+    #   Flow C: accountant_approved
+    if user.advance_role == "bank_user":
+        if rr in ("top_manager", "hr") and state == "ceo_approved":
+            return True
+        if rr == "other" and state == "accountant_approved":
+            return True
+        return False
+
+    return False
+
+
+def _can_refuse_advance(user, adv):
+    """Refuse allowed only at the same stage the user can approve."""
+    if adv.approval_state in ("draft", "paid", "rejected"):
+        return False
+    return _can_approve_advance(user, adv)
+
+
+def _get_next_advance_state(user, adv):
+    """Returns the next approval_state after this user approves."""
+    rr = adv.requester_role
+    state = adv.approval_state
+
+    # Flow A: top_manager
+    if rr == "top_manager":
+        if state == "submitted":
+            return "hr_approved"        # HR just approved
+        if state == "hr_approved":
+            return "ceo_approved"       # CEO just approved
+        if state == "ceo_approved":
+            return "bank_approved"      # Bank just approved → paid
+
+    # Flow B: hr
+    if rr == "hr":
+        if state == "submitted":
+            return "accountant_approved"  # Accountant just approved
+        if state == "accountant_approved":
+            return "ceo_approved"         # CEO just approved
+        if state == "ceo_approved":
+            return "bank_approved"        # Bank just approved → paid
+
+    # Flow C: other
+    if rr == "other":
+        if state == "submitted":
+            return "hr_approved"               # HR just approved
+        if state == "hr_approved":
+            return "sub_accountant_approved"   # Sub Accountant just approved
+        if state == "sub_accountant_approved":
+            return "accountant_approved"       # Accountant just approved
+        if state == "accountant_approved":
+            return "bank_approved"             # Bank just approved → paid
+
+    return None
+

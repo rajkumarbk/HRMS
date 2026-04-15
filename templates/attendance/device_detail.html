@@ -6,11 +6,12 @@
 <div class="page-header">
   <div>
     <div class="page-title">{{ device.name }}</div>
-    <div class="page-subtitle">{{ device.ip_address }}:{{ device.port }} — {{ device.location|default:"No location" }}</div>
+    <div class="page-subtitle">{{ device.ip_address }}:{{ device.port }} — {{ device.location|default:"No location" }}
+    </div>
   </div>
   <div style="display:flex;gap:8px;">
     <!-- <a href="?refresh=1" class="btn btn-secondary"><i class="fa-solid fa-rotate"></i> Refresh</a> -->
-     <a href="{% url 'device_sync' device.pk %}" class="btn btn-success">
+    <a href="{% url 'device_sync' device.pk %}" class="btn btn-success">
       <i class="fa-solid fa-download"></i> Sync Attendance
     </a>
     <a href="{% url 'attendance_list' %}" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i> Back</a>
@@ -24,7 +25,8 @@
     <i class="fa-solid fa-circle" style="font-size:8px;margin-right:6px;"></i> Connected
   </span>
   {% if device.last_sync %}
-  <span style="font-size:12px;color:var(--text3);margin-left:10px;">Last synced: {{ device.last_sync|date:"M d, Y H:i" }}</span>
+  <span style="font-size:12px;color:var(--text3);margin-left:10px;">Last synced: {{ device.last_sync|date:"M d, Y H:i"
+    }}</span>
   {% endif %}
   {% else %}
   <span class="badge badge-danger" style="font-size:13px;padding:6px 14px;">
@@ -78,12 +80,7 @@
     <div style="flex:1;min-width:200px;">
       <div class="search-bar">
         <i class="fa-solid fa-search search-icon"></i>
-        <input 
-          type="text" 
-          name="name" 
-          value="{{ search_name }}" 
-          placeholder="Search employee..."
-        >
+        <input type="text" name="name" value="{{ search_name }}" placeholder="Search employee...">
       </div>
     </div>
 
@@ -98,29 +95,30 @@
     </div>
 
     <!-- Buttons -->
-<div style="display:flex;gap:8px;">
-  <button type="submit" class="btn btn-primary">
-    <i class="fa-solid fa-filter"></i> Filter
-  </button>
+    <div style="display:flex;gap:8px;">
+      <button type="submit" class="btn btn-primary">
+        <i class="fa-solid fa-filter"></i> Filter
+      </button>
 
-  {% if search_name or search_date_from or search_date_to %}
-    <a href="{% url 'device_detail' device.pk %}" class="btn btn-secondary">
-      Clear
+      {% if search_name or search_date_from or search_date_to %}
+      <a href="{% url 'device_detail' device.pk %}" class="btn btn-secondary">
+        Clear
+      </a>
+      {% endif %}
+    </div>
+
+    <a href="{% url 'attendance_report_csv' device.pk %}?name={{ search_name }}&date_from={{ search_date_from }}&date_to={{ search_date_to }}"
+      class="btn btn-success" style="margin-left:auto;">
+      <i class="fa-solid fa-file-csv"></i> Download CSV
     </a>
-  {% endif %}
-</div>
-
-<a href="{% url 'attendance_report_csv' device.pk %}?name={{ search_name }}&date_from={{ search_date_from }}&date_to={{ search_date_to }}"
-   class="btn btn-success" style="margin-left:auto;">
-  <i class="fa-solid fa-file-csv"></i> Download CSV
-</a>
 
   </form>
 </div>
 
 <!-- Attendance Logs -->
-<div class="table-wrapper animate-fade-up">
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;background:var(--bg3);border-bottom:1px solid var(--border);">
+<div class="table-wrapper animate-fade-up" style="max-height: 500px; overflow-y: auto;">
+  <div
+    style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;background:var(--bg3);border-bottom:1px solid var(--border);">
     <div style="font-weight:600;font-size:14px;">
       <i class="fa-solid fa-list" style="color:var(--accent2);margin-right:8px;"></i>Attendance Logs
     </div>
@@ -128,43 +126,43 @@
   </div>
 
   <table>
-    <thead>
-  <tr>
-    <th>Device ID</th>
-    <th>Employee Name</th>
-    <th>Date</th>
-    <th>Check In</th>
-    <th>Check Out</th>
-    <th>Duration</th>
-    <!-- <th>Other Punches</th> -->
-  </tr>
-</thead>
-<tbody>
-  {% for row in page_obj %}
-  <tr>
-    <td style="font-family:'JetBrains Mono',monospace;color:var(--text3);">{{ row.user_id }}</td>
-    <td style="font-weight:600;font-size:13px;">{{ row.employee_name|default:"—" }}</td>
-    <td style="font-size:13px;">{{ row.date|date:"M d, Y" }}</td>
-    <td>
-      {% if row.check_in %}
-        <span class="badge badge-success">{{ row.check_in|date:"H:i:s" }}</span>
-      {% else %}
-        <span style="color:var(--text3);">—</span>
-      {% endif %}
-    </td>
-    <td>
-      {% if row.check_out %}
-        <span class="badge badge-danger">{{ row.check_out|date:"H:i:s" }}</span>
-      {% else %}
-        <span style="color:var(--text3);">—</span>
-      {% endif %}
-    </td>
-    <td style="font-size:12px;color:var(--text3);">
-      {% if row.check_in and row.check_out %}
-        {% with diff=row.check_out|timeuntil:row.check_in %}{{ diff }}{% endwith %}
-      {% else %}—{% endif %}
-    </td>
-    <!-- <td style="font-size:12px;color:var(--text3);">
+    <thead style="position: sticky; top: 0;">
+      <tr>
+        <th>Device ID</th>
+        <th>Employee Name</th>
+        <th>Date</th>
+        <th>Check In</th>
+        <th>Check Out</th>
+        <th>Duration</th>
+        <!-- <th>Other Punches</th> -->
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in page_obj %}
+      <tr>
+        <td style="font-family:'JetBrains Mono',monospace;color:var(--text3);">{{ row.user_id }}</td>
+        <td style="font-weight:600;font-size:13px;">{{ row.employee_name|default:"—" }}</td>
+        <td style="font-size:13px;">{{ row.date|date:"M d, Y" }}</td>
+        <td>
+          {% if row.check_in %}
+          <span class="badge badge-success">{{ row.check_in|date:"H:i:s" }}</span>
+          {% else %}
+          <span style="color:var(--text3);">—</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if row.check_out %}
+          <span class="badge badge-danger">{{ row.check_out|date:"H:i:s" }}</span>
+          {% else %}
+          <span style="color:var(--text3);">—</span>
+          {% endif %}
+        </td>
+        <td style="font-size:12px;color:var(--text3);">
+          {% if row.check_in and row.check_out %}
+          {% with diff=row.check_out|timeuntil:row.check_in %}{{ diff }}{% endwith %}
+          {% else %}—{% endif %}
+        </td>
+        <!-- <td style="font-size:12px;color:var(--text3);">
       {% for p in row.other_punches %}
         {% if p.type == "2" %}<span class="badge badge-warning" style="margin-right:4px;">Break Out {{ p.time|date:"H:i" }}</span>
         {% elif p.type == "3" %}<span class="badge badge-warning" style="margin-right:4px;">Break In {{ p.time|date:"H:i" }}</span>
@@ -173,32 +171,37 @@
         {% endif %}
       {% empty %}—{% endfor %}
     </td> -->
-  </tr>
-  {% empty %}
-  <tr>
-    <td colspan="7" style="text-align:center;padding:50px;color:var(--text3);">
-      <div style="font-size:40px;margin-bottom:12px;">📋</div>
-      <div>No records found. Click Sync to pull data from device.</div>
-    </td>
-  </tr>
-  {% endfor %}
-</tbody>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7" style="text-align:center;padding:50px;color:var(--text3);">
+          <div style="font-size:40px;margin-bottom:12px;">📋</div>
+          <div>No records found. Click Sync to pull data from device.</div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
   </table>
 
   <!-- Pagination -->
   {% if page_obj.paginator.num_pages > 1 %}
-  <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-top:1px solid var(--border);font-size:13px;">
+  <div
+    style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-top:1px solid var(--border);font-size:13px;">
     <div style="color:var(--text3);">
       Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} &nbsp;|&nbsp; {{ total_logs }} total records
     </div>
     <div style="display:flex;gap:6px;">
       {% if page_obj.has_previous %}
-      <a href="?page=1&name={{ search_name }}&date_from={{ search_date_from }}&date_to={{ search_date_to }}" class="btn btn-secondary btn-sm">« First</a>
-      <a href="?page={{ page_obj.previous_page_number }}&name={{ search_name }}&date_from={{ search_date_from }}&date_to={{ search_date_to }}" class="btn btn-secondary btn-sm">‹ Prev</a>
+      <a href="?page=1&name={{ search_name }}&date_from={{ search_date_from }}&date_to={{ search_date_to }}"
+        class="btn btn-secondary btn-sm">« First</a>
+      <a href="?page={{ page_obj.previous_page_number }}&name={{ search_name }}&date_from={{ search_date_from }}&date_to={{ search_date_to }}"
+        class="btn btn-secondary btn-sm">‹ Prev</a>
       {% endif %}
       {% if page_obj.has_next %}
-      <a href="?page={{ page_obj.next_page_number }}&name={{ search_name }}&date_from={{ search_date_from }}&date_to={{ search_date_to }}" class="btn btn-secondary btn-sm">Next ›</a>
-      <a href="?page={{ page_obj.paginator.num_pages }}&name={{ search_name }}&date_from={{ search_date_from }}&date_to={{ search_date_to }}" class="btn btn-secondary btn-sm">Last »</a>
+      <a href="?page={{ page_obj.next_page_number }}&name={{ search_name }}&date_from={{ search_date_from }}&date_to={{ search_date_to }}"
+        class="btn btn-secondary btn-sm">Next ›</a>
+      <a href="?page={{ page_obj.paginator.num_pages }}&name={{ search_name }}&date_from={{ search_date_from }}&date_to={{ search_date_to }}"
+        class="btn btn-secondary btn-sm">Last »</a>
       {% endif %}
     </div>
   </div>
