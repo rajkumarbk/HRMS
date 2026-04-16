@@ -49,8 +49,6 @@ except ImportError:
 
 
 # --- ATTENDANCE VIEWS ---
-@login_required
-@hr_required
 def _connect_device(ip, port, password=0):
     if ZK is None:
         return None, None
@@ -141,17 +139,6 @@ def my_attendance(request):
             "employee": employee,
         },
     )
-
-
-@login_required
-@hr_required
-def device_add(request):
-    form = ZKTecoDeviceForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Device added successfully.")
-        return redirect("attendance_list")
-    return render(request, "attendance/device_form.html", {"form": form})
 
 
 def _process_zk_logs_to_attendance(device):
@@ -388,7 +375,7 @@ def device_sync(request, pk):
     try:
         conn.disable_device()
 
-        user_map = {}  # zk_user_id -> name
+        user_map = {}
         try:
             for u in conn.get_users():
                 user_map[str(u.user_id)] = u.name
@@ -396,12 +383,12 @@ def device_sync(request, pk):
             logger.warning(f"Could not fetch users: {e}")
 
         attendances = conn.get_attendance()
-        conn.enable_device()
+        # remove conn.enable_device() from here
 
         synced = 0
         for att in attendances:
             uid = str(att.user_id)
-            _, created = ZKAttendanceLog.objects.get_or_create(
+            _, created = ZKAttendanceLog.objects.update_or_create(
                 device=device,
                 user_id=uid,
                 punch_time=att.timestamp,
@@ -418,17 +405,19 @@ def device_sync(request, pk):
         device.connection_status = True
         device.save()
 
-        # Convert raw logs → AttendanceRecord rows
         linked = _process_zk_logs_to_attendance(device)
 
         messages.success(
             request,
             f"Sync complete. {synced} new punch records pulled, {linked} attendance records updated.",
         )
+
     except Exception as e:
         messages.error(request, f"Sync failed: {e}")
+
     finally:
         try:
+            conn.enable_device()  # ← always runs no matter what
             conn.disconnect()
         except Exception:
             pass

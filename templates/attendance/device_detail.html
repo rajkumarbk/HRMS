@@ -25,8 +25,8 @@
     <i class="fa-solid fa-circle" style="font-size:8px;margin-right:6px;"></i> Connected
   </span>
   {% if device.last_sync %}
-  <span style="font-size:12px;color:var(--text3);margin-left:10px;">Last synced: {{ device.last_sync|date:"M d, Y H:i"
-    }}</span>
+  <span style="font-size:12px;color:var(--text3);margin-left:10px;">Last synced: {{ device.last_sync|date:"M d, Y H:i"}}
+  </span>
   {% endif %}
   {% else %}
   <span class="badge badge-danger" style="font-size:13px;padding:6px 14px;">

@@ -1,6 +1,7 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,12 +9,20 @@
   <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
   <link rel="stylesheet" href="{% static 'css/main.css' %}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap"
+    rel="stylesheet">
   <script>
     if (localStorage.getItem('theme') !== 'dark') document.documentElement.classList.add('light-mode');
   </script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     :root {
       --accent: #3b82f6;
@@ -45,9 +54,9 @@
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(ellipse 80% 60% at 20% 30%, rgba(59,130,246,0.18) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 50% at 80% 70%, rgba(139,92,246,0.14) 0%, transparent 55%),
-        radial-gradient(ellipse 50% 40% at 60% 10%, rgba(6,182,212,0.10) 0%, transparent 50%),
+        radial-gradient(ellipse 80% 60% at 20% 30%, rgba(59, 130, 246, 0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 70%, rgba(139, 92, 246, 0.14) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 60% 10%, rgba(6, 182, 212, 0.10) 0%, transparent 50%),
         linear-gradient(160deg, #060c1a 0%, #0d1629 50%, #080e1e 100%);
     }
 
@@ -59,31 +68,50 @@
       opacity: 0.5;
       animation: float-orb 12s ease-in-out infinite;
     }
+
     .orb1 {
-      width: 400px; height: 400px;
-      background: radial-gradient(circle, rgba(59,130,246,0.4), transparent 70%);
-      top: -100px; left: -100px;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.4), transparent 70%);
+      top: -100px;
+      left: -100px;
       animation-duration: 14s;
     }
+
     .orb2 {
-      width: 350px; height: 350px;
-      background: radial-gradient(circle, rgba(139,92,246,0.35), transparent 70%);
-      bottom: -80px; right: -80px;
+      width: 350px;
+      height: 350px;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.35), transparent 70%);
+      bottom: -80px;
+      right: -80px;
       animation-duration: 11s;
       animation-delay: -4s;
     }
+
     .orb3 {
-      width: 250px; height: 250px;
-      background: radial-gradient(circle, rgba(6,182,212,0.3), transparent 70%);
-      top: 50%; right: 15%;
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(6, 182, 212, 0.3), transparent 70%);
+      top: 50%;
+      right: 15%;
       animation-duration: 16s;
       animation-delay: -8s;
     }
 
     @keyframes float-orb {
-      0%, 100% { transform: translate(0, 0) scale(1); }
-      33% { transform: translate(30px, -40px) scale(1.05); }
-      66% { transform: translate(-20px, 30px) scale(0.95); }
+
+      0%,
+      100% {
+        transform: translate(0, 0) scale(1);
+      }
+
+      33% {
+        transform: translate(30px, -40px) scale(1.05);
+      }
+
+      66% {
+        transform: translate(-20px, 30px) scale(0.95);
+      }
     }
 
     /* Grid */
@@ -91,8 +119,8 @@
       position: absolute;
       inset: 0;
       background-image:
-        linear-gradient(rgba(59,130,246,0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(59,130,246,0.05) 1px, transparent 1px);
+        linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
       background-size: 60px 60px;
       mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
     }
@@ -103,28 +131,102 @@
       inset: 0;
       overflow: hidden;
     }
+
     .particle {
       position: absolute;
-      width: 2px; height: 2px;
-      background: rgba(59,130,246,0.6);
+      width: 2px;
+      height: 2px;
+      background: rgba(59, 130, 246, 0.6);
       border-radius: 50%;
       animation: rise linear infinite;
     }
-    .particle:nth-child(2)  { left: 10%; width: 3px; height: 3px; animation-duration: 8s; animation-delay: -2s; background: rgba(139,92,246,0.6); }
-    .particle:nth-child(3)  { left: 20%; animation-duration: 11s; animation-delay: -5s; }
-    .particle:nth-child(4)  { left: 35%; width: 3px; height: 3px; animation-duration: 9s; animation-delay: -1s; background: rgba(6,182,212,0.6); }
-    .particle:nth-child(5)  { left: 50%; animation-duration: 13s; animation-delay: -7s; }
-    .particle:nth-child(6)  { left: 65%; width: 2px; height: 2px; animation-duration: 10s; animation-delay: -3s; background: rgba(139,92,246,0.5); }
-    .particle:nth-child(7)  { left: 75%; animation-duration: 7s; animation-delay: -9s; }
-    .particle:nth-child(8)  { left: 85%; width: 3px; height: 3px; animation-duration: 12s; animation-delay: -6s; background: rgba(6,182,212,0.5); }
-    .particle:nth-child(9)  { left: 92%; animation-duration: 9s; animation-delay: -4s; }
-    .particle:nth-child(10) { left: 5%;  width: 2px; height: 2px; animation-duration: 14s; animation-delay: -11s; }
+
+    .particle:nth-child(2) {
+      left: 10%;
+      width: 3px;
+      height: 3px;
+      animation-duration: 8s;
+      animation-delay: -2s;
+      background: rgba(139, 92, 246, 0.6);
+    }
+
+    .particle:nth-child(3) {
+      left: 20%;
+      animation-duration: 11s;
+      animation-delay: -5s;
+    }
+
+    .particle:nth-child(4) {
+      left: 35%;
+      width: 3px;
+      height: 3px;
+      animation-duration: 9s;
+      animation-delay: -1s;
+      background: rgba(6, 182, 212, 0.6);
+    }
+
+    .particle:nth-child(5) {
+      left: 50%;
+      animation-duration: 13s;
+      animation-delay: -7s;
+    }
+
+    .particle:nth-child(6) {
+      left: 65%;
+      width: 2px;
+      height: 2px;
+      animation-duration: 10s;
+      animation-delay: -3s;
+      background: rgba(139, 92, 246, 0.5);
+    }
+
+    .particle:nth-child(7) {
+      left: 75%;
+      animation-duration: 7s;
+      animation-delay: -9s;
+    }
+
+    .particle:nth-child(8) {
+      left: 85%;
+      width: 3px;
+      height: 3px;
+      animation-duration: 12s;
+      animation-delay: -6s;
+      background: rgba(6, 182, 212, 0.5);
+    }
+
+    .particle:nth-child(9) {
+      left: 92%;
+      animation-duration: 9s;
+      animation-delay: -4s;
+    }
+
+    .particle:nth-child(10) {
+      left: 5%;
+      width: 2px;
+      height: 2px;
+      animation-duration: 14s;
+      animation-delay: -11s;
+    }
 
     @keyframes rise {
-      0%   { transform: translateY(110vh) scale(0); opacity: 0; }
-      10%  { opacity: 1; }
-      90%  { opacity: 0.5; }
-      100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+      0% {
+        transform: translateY(110vh) scale(0);
+        opacity: 0;
+      }
+
+      10% {
+        opacity: 1;
+      }
+
+      90% {
+        opacity: 0.5;
+      }
+
+      100% {
+        transform: translateY(-10vh) scale(1);
+        opacity: 0;
+      }
     }
 
     /* ── Card ── */
@@ -132,8 +234,8 @@
       width: 100%;
       max-width: 440px;
       margin: 1.5rem;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.10);
       border-radius: 28px;
       padding: 48px 44px;
       position: relative;
@@ -141,43 +243,69 @@
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       box-shadow:
-        0 0 0 1px rgba(59,130,246,0.08),
-        0 40px 80px rgba(0,0,0,0.5),
-        0 0 100px rgba(59,130,246,0.06) inset;
-      animation: card-in 0.7s cubic-bezier(0.22,1,0.36,1) forwards;
+        0 0 0 1px rgba(59, 130, 246, 0.08),
+        0 40px 80px rgba(0, 0, 0, 0.5),
+        0 0 100px rgba(59, 130, 246, 0.06) inset;
+      animation: card-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
     @keyframes card-in {
-      from { opacity: 0; transform: translateY(32px) scale(0.96); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
+      from {
+        opacity: 0;
+        transform: translateY(32px) scale(0.96);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
     }
 
     /* Top accent line with animation */
     .card-top-bar {
       position: absolute;
-      top: 0; left: 10%; right: 10%;
+      top: 0;
+      left: 10%;
+      right: 10%;
       height: 2px;
       background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), var(--accent3), transparent);
       border-radius: 0 0 4px 4px;
       animation: shimmer-bar 3s linear infinite;
       background-size: 200% 100%;
     }
+
     @keyframes shimmer-bar {
-      0%   { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
+      0% {
+        background-position: 200% 0;
+      }
+
+      100% {
+        background-position: -200% 0;
+      }
     }
 
     /* Corner glows */
     .card-corner {
       position: absolute;
-      width: 80px; height: 80px;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
       opacity: 0.15;
       filter: blur(20px);
       pointer-events: none;
     }
-    .corner-tl { top: -20px; left: -20px; background: var(--accent); }
-    .corner-br { bottom: -20px; right: -20px; background: var(--accent2); }
+
+    .corner-tl {
+      top: -20px;
+      left: -20px;
+      background: var(--accent);
+    }
+
+    .corner-br {
+      bottom: -20px;
+      right: -20px;
+      background: var(--accent2);
+    }
 
     /* ── Logo area ── */
     .login-logo {
@@ -191,7 +319,8 @@
 
     .logo-ring {
       position: relative;
-      width: 80px; height: 80px;
+      width: 80px;
+      height: 80px;
     }
 
     .logo-ring-svg {
@@ -201,7 +330,9 @@
     }
 
     @keyframes spin-ring {
-      to { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     .logo-inner {
@@ -212,14 +343,14 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 30px rgba(59,130,246,0.4), 0 0 60px rgba(139,92,246,0.2);
+      box-shadow: 0 0 30px rgba(59, 130, 246, 0.4), 0 0 60px rgba(139, 92, 246, 0.2);
     }
 
     .logo-inner img {
       width: 34px;
       height: 34px;
       object-fit: contain;
-      filter: drop-shadow(0 0 8px rgba(59,130,246,0.6));
+      filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.6));
     }
 
     .login-title {
@@ -233,7 +364,7 @@
 
     .login-subtitle {
       font-size: 13.5px;
-      color: rgba(255,255,255,0.45);
+      color: rgba(255, 255, 255, 0.45);
       text-align: center;
       letter-spacing: 0.2px;
     }
@@ -243,25 +374,41 @@
       margin-bottom: 18px;
       animation: fade-up 0.6s both;
     }
-    .form-group:nth-child(1) { animation-delay: 0.25s; }
-    .form-group:nth-child(2) { animation-delay: 0.32s; }
+
+    .form-group:nth-child(1) {
+      animation-delay: 0.25s;
+    }
+
+    .form-group:nth-child(2) {
+      animation-delay: 0.32s;
+    }
 
     @keyframes fade-up {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     label {
       display: block;
       font-size: 12.5px;
       font-weight: 500;
-      color: rgba(255,255,255,0.55);
+      color: rgba(255, 255, 255, 0.55);
       margin-bottom: 8px;
       letter-spacing: 0.5px;
       text-transform: uppercase;
     }
 
-    label i { margin-right: 6px; color: var(--accent2); }
+    label i {
+      margin-right: 6px;
+      color: var(--accent2);
+    }
 
     .input-wrap {
       position: relative;
@@ -272,7 +419,7 @@
       left: 16px;
       top: 50%;
       transform: translateY(-50%);
-      color: rgba(255,255,255,0.3);
+      color: rgba(255, 255, 255, 0.3);
       font-size: 14px;
       pointer-events: none;
       transition: color 0.3s;
@@ -281,8 +428,8 @@
 
     .input-wrap input {
       width: 100%;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.10);
       border-radius: 12px;
       padding: 13px 16px 13px 44px;
       font-size: 14.5px;
@@ -292,15 +439,17 @@
       transition: all 0.3s;
     }
 
-    .input-wrap input::placeholder { color: rgba(255,255,255,0.25); }
-
-    .input-wrap input:focus {
-      background: rgba(59,130,246,0.08);
-      border-color: rgba(59,130,246,0.5);
-      box-shadow: 0 0 0 4px rgba(59,130,246,0.10);
+    .input-wrap input::placeholder {
+      color: rgba(255, 255, 255, 0.25);
     }
 
-    .input-wrap input:focus + .input-icon,
+    .input-wrap input:focus {
+      background: rgba(59, 130, 246, 0.08);
+      border-color: rgba(59, 130, 246, 0.5);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.10);
+    }
+
+    .input-wrap input:focus+.input-icon,
     .input-wrap:focus-within .input-icon {
       color: var(--accent);
     }
@@ -313,13 +462,16 @@
       transform: translateY(-50%);
       background: none;
       border: none;
-      color: rgba(255,255,255,0.3);
+      color: rgba(255, 255, 255, 0.3);
       cursor: pointer;
       font-size: 14px;
       padding: 4px;
       transition: color 0.3s;
     }
-    .pw-toggle:hover { color: rgba(255,255,255,0.7); }
+
+    .pw-toggle:hover {
+      color: rgba(255, 255, 255, 0.7);
+    }
 
     /* ── Submit button ── */
     .btn-login {
@@ -341,7 +493,7 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
-      box-shadow: 0 4px 20px rgba(37,99,235,0.4);
+      box-shadow: 0 4px 20px rgba(37, 99, 235, 0.4);
       animation: fade-up 0.6s 0.4s both;
       letter-spacing: 0.3px;
     }
@@ -350,32 +502,53 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+      background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.15) 50%, transparent 100%);
       transform: translateX(-100%);
       transition: transform 0.5s;
     }
 
-    .btn-login:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(37,99,235,0.55); }
-    .btn-login:hover::before { transform: translateX(100%); }
-    .btn-login:active { transform: translateY(0); }
+    .btn-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(37, 99, 235, 0.55);
+    }
+
+    .btn-login:hover::before {
+      transform: translateX(100%);
+    }
+
+    .btn-login:active {
+      transform: translateY(0);
+    }
 
     /* Loading state */
     .btn-login .spinner {
       display: none;
-      width: 18px; height: 18px;
-      border: 2px solid rgba(255,255,255,0.3);
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
       border-top-color: #fff;
       border-radius: 50%;
       animation: spin 0.6s linear infinite;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .btn-login.loading .btn-text { display: none; }
-    .btn-login.loading .spinner { display: block; }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .btn-login.loading .btn-text {
+      display: none;
+    }
+
+    .btn-login.loading .spinner {
+      display: block;
+    }
 
     /* ── Error ── */
     .error-msg {
-      background: rgba(239,68,68,0.1);
-      border: 1px solid rgba(239,68,68,0.25);
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.25);
       color: #fca5a5;
       border-radius: 10px;
       padding: 11px 14px;
@@ -401,21 +574,25 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 20px;
       padding: 5px 12px;
       font-size: 11.5px;
-      color: rgba(255,255,255,0.4);
+      color: rgba(255, 255, 255, 0.4);
       letter-spacing: 0.3px;
     }
-    .badge i { font-size: 10px; color: var(--accent); }
+
+    .badge i {
+      font-size: 10px;
+      color: var(--accent);
+    }
 
     /* ── Footer ── */
     .login-footer {
       text-align: center;
       margin-top: 20px;
-      color: rgba(255,255,255,0.2);
+      color: rgba(255, 255, 255, 0.2);
       font-size: 11.5px;
       line-height: 1.8;
       animation: fade-up 0.6s 0.55s both;
@@ -423,54 +600,111 @@
 
     /* ── Responsive ── */
     @media (max-width: 480px) {
-      .login-card { padding: 36px 28px; margin: 1rem; border-radius: 22px; }
-      .login-title { font-size: 22px; }
-      .logo-ring { width: 70px; height: 70px; }
+      .login-card {
+        padding: 36px 28px;
+        margin: 1rem;
+        border-radius: 22px;
+      }
+
+      .login-title {
+        font-size: 22px;
+      }
+
+      .logo-ring {
+        width: 70px;
+        height: 70px;
+      }
     }
 
     @media (max-width: 360px) {
-      .login-card { padding: 28px 20px; }
-      .btn-login { font-size: 14px; }
+      .login-card {
+        padding: 28px 20px;
+      }
+
+      .btn-login {
+        font-size: 14px;
+      }
     }
 
     /* ── Light mode overrides ── */
     html.light-mode body {
       background: #f0f4ff;
     }
+
     html.light-mode .bg-gradient {
       background:
-        radial-gradient(ellipse 80% 60% at 20% 30%, rgba(59,130,246,0.10) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 50% at 80% 70%, rgba(139,92,246,0.08) 0%, transparent 55%),
+        radial-gradient(ellipse 80% 60% at 20% 30%, rgba(59, 130, 246, 0.10) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 70%, rgba(139, 92, 246, 0.08) 0%, transparent 55%),
         linear-gradient(160deg, #e8f0ff 0%, #f0f4ff 50%, #eaf0ff 100%);
     }
+
     html.light-mode .login-card {
-      background: rgba(255,255,255,0.85);
-      border-color: rgba(59,130,246,0.15);
-      box-shadow: 0 40px 80px rgba(59,130,246,0.12), 0 0 0 1px rgba(59,130,246,0.08);
+      background: rgba(255, 255, 255, 0.85);
+      border-color: rgba(59, 130, 246, 0.15);
+      box-shadow: 0 40px 80px rgba(59, 130, 246, 0.12), 0 0 0 1px rgba(59, 130, 246, 0.08);
     }
-    html.light-mode .login-title { color: #0f172a; }
-    html.light-mode .login-subtitle { color: #64748b; }
-    html.light-mode label { color: #64748b; }
-    html.light-mode .input-wrap input {
-      background: rgba(59,130,246,0.04);
-      border-color: rgba(59,130,246,0.15);
+
+    html.light-mode .login-title {
       color: #0f172a;
     }
-    html.light-mode .input-wrap input::placeholder { color: #94a3b8; }
-    html.light-mode .input-wrap .input-icon { color: #94a3b8; }
-    html.light-mode .input-wrap input:focus { background: rgba(59,130,246,0.06); border-color: rgba(59,130,246,0.4); }
-    html.light-mode .badge { background: rgba(59,130,246,0.06); border-color: rgba(59,130,246,0.12); color: #64748b; }
-    html.light-mode .login-footer { color: #94a3b8; }
-    html.light-mode .pw-toggle { color: #94a3b8; }
-    html.light-mode .orb { opacity: 0.25; }
-    html.light-mode .particle { background: rgba(59,130,246,0.35); }
+
+    html.light-mode .login-subtitle {
+      color: #64748b;
+    }
+
+    html.light-mode label {
+      color: #64748b;
+    }
+
+    html.light-mode .input-wrap input {
+      background: rgba(59, 130, 246, 0.04);
+      border-color: rgba(59, 130, 246, 0.15);
+      color: #0f172a;
+    }
+
+    html.light-mode .input-wrap input::placeholder {
+      color: #94a3b8;
+    }
+
+    html.light-mode .input-wrap .input-icon {
+      color: #94a3b8;
+    }
+
+    html.light-mode .input-wrap input:focus {
+      background: rgba(59, 130, 246, 0.06);
+      border-color: rgba(59, 130, 246, 0.4);
+    }
+
+    html.light-mode .badge {
+      background: rgba(59, 130, 246, 0.06);
+      border-color: rgba(59, 130, 246, 0.12);
+      color: #64748b;
+    }
+
+    html.light-mode .login-footer {
+      color: #94a3b8;
+    }
+
+    html.light-mode .pw-toggle {
+      color: #94a3b8;
+    }
+
+    html.light-mode .orb {
+      opacity: 0.25;
+    }
+
+    html.light-mode .particle {
+      background: rgba(59, 130, 246, 0.35);
+    }
+
     html.light-mode .grid-lines {
       background-image:
-        linear-gradient(rgba(59,130,246,0.06) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(59,130,246,0.06) 1px, transparent 1px);
+        linear-gradient(rgba(59, 130, 246, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 130, 246, 0.06) 1px, transparent 1px);
     }
   </style>
 </head>
+
 <body>
 
   <!-- Background -->
@@ -504,15 +738,15 @@
     <div class="login-logo">
       <div class="logo-ring">
         <svg class="logo-ring-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="40" cy="40" r="37" stroke="url(#ringGrad)" stroke-width="1.5" stroke-dasharray="6 4"/>
-          <circle cx="40" cy="3" r="3" fill="#3b82f6"/>
-          <circle cx="77" cy="40" r="2" fill="#8b5cf6"/>
-          <circle cx="40" cy="77" r="2.5" fill="#06b6d4"/>
+          <circle cx="40" cy="40" r="37" stroke="url(#ringGrad)" stroke-width="1.5" stroke-dasharray="6 4" />
+          <circle cx="40" cy="3" r="3" fill="#3b82f6" />
+          <circle cx="77" cy="40" r="2" fill="#8b5cf6" />
+          <circle cx="40" cy="77" r="2.5" fill="#06b6d4" />
           <defs>
             <linearGradient id="ringGrad" x1="0" y1="0" x2="80" y2="80">
-              <stop offset="0%" stop-color="#3b82f6"/>
-              <stop offset="50%" stop-color="#8b5cf6"/>
-              <stop offset="100%" stop-color="#06b6d4"/>
+              <stop offset="0%" stop-color="#3b82f6" />
+              <stop offset="50%" stop-color="#8b5cf6" />
+              <stop offset="100%" stop-color="#06b6d4" />
             </linearGradient>
           </defs>
         </svg>
@@ -521,8 +755,12 @@
         </div>
       </div>
       <div>
-        <div class="login-title">Welcome Back</div>
-        <div class="login-subtitle">Sign in to HR Management System</div>
+        <div class="login-title">Welcome</div>
+        <div class="login-subtitle">Human Resource Management System</div>
+      </div>
+      <div class="info-badges">
+        <div class="badge"><i class="fa-solid fa-building"></i> AlSalem Auto Glass</div>
+        <div class="badge"><i class="fa-solid fa-building"></i> Watam Auto Glass</div>
       </div>
     </div>
 
@@ -540,7 +778,7 @@
         <label><i class="fa-solid fa-id-card"></i>Iqama / ID Number</label>
         <div class="input-wrap">
           <input type="text" name="iqama_number" placeholder="Enter your Iqama number"
-                 value="{{ form.iqama_number.value|default:'' }}" autocomplete="off" required>
+            value="{{ form.iqama_number.value|default:'' }}" autocomplete="off" required>
           <i class="fa-solid fa-fingerprint input-icon"></i>
         </div>
       </div>
@@ -565,9 +803,7 @@
       </button>
     </form>
 
-    <div class="info-badges">
-      <div class="badge"><i class="fa-solid fa-building"></i> AlSalem Auto Glass</div>
-    </div>
+
 
     <div class="login-footer">
       HR Management System &copy; {% now "Y" %}<br>
@@ -578,7 +814,7 @@
   <script>
     function togglePw() {
       const input = document.getElementById('passwordInput');
-      const icon  = document.getElementById('pwEyeIcon');
+      const icon = document.getElementById('pwEyeIcon');
       if (input.type === 'password') {
         input.type = 'text';
         icon.className = 'fa-solid fa-eye-slash';
@@ -588,12 +824,12 @@
       }
     }
 
-    document.getElementById('loginForm').addEventListener('submit', function() {
+    document.getElementById('loginForm').addEventListener('submit', function () {
       const btn = document.getElementById('loginBtn');
       btn.classList.add('loading');
     });
 
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') document.querySelector('.btn-login').click();
     });
   </script>

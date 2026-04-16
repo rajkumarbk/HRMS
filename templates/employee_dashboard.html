@@ -127,7 +127,7 @@
         </div>
         <div style="margin-top:16px;">
             <a href="{% url 'employee_detail' employee.pk %}" class="btn btn-secondary btn-sm">
-                <i class="fa-solid fa-edit"></i> Edit My Profile
+                <i class="fa-solid fa-eye"></i>My Profile
             </a>
         </div>
     </div>
@@ -139,11 +139,10 @@
             {% if attendance_today %}
                 <div style="text-align:center;padding:20px;">
                     <div style="font-size:48px;color:var(--success);margin-bottom:10px;">✓</div>
-                    <div style="font-size:16px;font-weight:600;">Checked In</div>
-                    <div style="margin-top:10px;">
-                        <div>Check In: <strong>{{ attendance_today.check_in|date:"H:i" }}</strong></div>
+                    <div style="margin-top:10px;" class="btn btn-success">
+                        <div>Check In: <strong>{{ attendance_today.check_in|date:"d/m/Y h:i A" }}</strong></div>
                         {% if attendance_today.check_out %}
-                        <div>Check Out: <strong>{{ attendance_today.check_out|date:"H:i" }}</strong></div>
+                        <div>Check Out: <strong>{{ attendance_today.check_out|date:"d/m/Y h:i A" }}</strong></div>
                         <div>Worked: <strong>{{ attendance_today.worked_hours }} hours</strong></div>
                         {% endif %}
                     </div>
